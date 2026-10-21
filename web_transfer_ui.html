@@ -1,0 +1,883 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>TVFile Web 局域网传输中心</title>
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      background: #0B0F17;
+      color: #fff;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "PingFang SC", "Microsoft YaHei", sans-serif;
+    }
+  </style>
+</head>
+<body>
+  
+<div id="tvfile-web-root">
+  <style>
+    
+#tvfile-web-root {
+  --bg-main: #0B0F17;
+  --bg-card: #151D2C;
+  --bg-card-hover: #1C273B;
+  --bg-input: #101622;
+  --border: #23314A;
+  --border-focus: #00F0FF;
+  --accent-cyan: #00F0FF;
+  --accent-blue: #0077FF;
+  --accent-green: #00E676;
+  --accent-red: #FF5252;
+  --accent-orange: #FF9800;
+  --text-primary: #F0F6FC;
+  --text-secondary: #8B9BB4;
+  --text-muted: #53647E;
+  
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "PingFang SC", "Microsoft YaHei", sans-serif;
+  background-color: var(--bg-main);
+  color: var(--text-primary);
+  line-height: 1.5;
+  padding: 24px;
+  box-sizing: border-box;
+  min-height: 800px;
+  width: 100%;
+}
+
+#tvfile-web-root * {
+  box-sizing: border-box;
+  transition: all 0.2s ease;
+}
+
+/* 顶部导航与状态条 */
+.web-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 16px 24px;
+  margin-bottom: 24px;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+.brand-section {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.brand-logo {
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  background: linear-gradient(135deg, #0077FF 0%, #00F0FF 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 22px;
+  box-shadow: 0 0 16px rgba(0, 240, 255, 0.4);
+}
+.brand-text h1 {
+  font-size: 18px;
+  font-weight: 700;
+  margin: 0;
+  color: #fff;
+  letter-spacing: 0.5px;
+}
+.brand-text p {
+  font-size: 12px;
+  color: var(--text-secondary);
+  margin: 2px 0 0 0;
+}
+.tv-status-badge {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  background: var(--bg-input);
+  padding: 8px 16px;
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  font-size: 13px;
+}
+.online-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--accent-green);
+  font-weight: 600;
+  font-size: 12px;
+}
+.pulse-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--accent-green);
+  box-shadow: 0 0 8px var(--accent-green);
+  animation: pulse 1.8s infinite;
+}
+@keyframes pulse {
+  0% { transform: scale(0.95); opacity: 0.8; }
+  50% { transform: scale(1.3); opacity: 1; }
+  100% { transform: scale(0.95); opacity: 0.8; }
+}
+
+/* 主内容双列排版 */
+.main-grid {
+  display: grid;
+  grid-template-columns: 360px 1fr;
+  gap: 24px;
+}
+@media (max-width: 900px) {
+  .main-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* 左侧：文件上传投放区 */
+.upload-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+.drop-zone {
+  background: var(--bg-card);
+  border: 2px dashed #2A3C59;
+  border-radius: 20px;
+  padding: 36px 20px;
+  text-align: center;
+  cursor: pointer;
+  position: relative;
+  overflow: hidden;
+}
+.drop-zone:hover, .drop-zone.dragover {
+  border-color: var(--accent-cyan);
+  background: #182438;
+  box-shadow: 0 0 24px rgba(0, 240, 255, 0.2);
+}
+.drop-icon-box {
+  width: 68px;
+  height: 68px;
+  border-radius: 50%;
+  background: #101826;
+  border: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 32px;
+  margin: 0 auto 16px auto;
+  color: var(--accent-cyan);
+}
+.drop-title {
+  font-size: 16px;
+  font-weight: 700;
+  color: #fff;
+  margin-bottom: 6px;
+}
+.drop-sub {
+  font-size: 12px;
+  color: var(--text-secondary);
+  line-height: 1.6;
+}
+.file-input-hidden {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+
+/* 电视存储目标卡片 */
+.target-info-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 16px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.info-row {
+  display: flex;
+  justify-content: space-between;
+  font-size: 12px;
+}
+.info-label {
+  color: var(--text-secondary);
+}
+.info-value {
+  color: var(--text-primary);
+  font-weight: 600;
+}
+.storage-progress-bar {
+  height: 6px;
+  background: #1E283D;
+  border-radius: 3px;
+  overflow: hidden;
+}
+.storage-progress-fill {
+  height: 100%;
+  width: 32%;
+  background: linear-gradient(90deg, #0077FF, #00F0FF);
+  border-radius: 3px;
+}
+
+/* 模拟快速上传工具条 */
+.quick-upload-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.quick-btn {
+  background: #1A2438;
+  border: 1px solid #2B3D5C;
+  color: var(--text-primary);
+  padding: 8px 12px;
+  border-radius: 10px;
+  font-size: 11px;
+  font-weight: 500;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.quick-btn:hover {
+  background: #253550;
+  border-color: var(--accent-cyan);
+  color: var(--accent-cyan);
+}
+
+/* 上传中的动态任务卡片 */
+.uploading-card {
+  background: #131E31;
+  border: 1px solid var(--accent-cyan);
+  border-radius: 14px;
+  padding: 14px;
+  display: none;
+  flex-direction: column;
+  gap: 8px;
+  box-shadow: 0 0 16px rgba(0, 240, 255, 0.25);
+}
+.uploading-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 12px;
+}
+.upload-progress-outer {
+  height: 6px;
+  background: #202D45;
+  border-radius: 3px;
+  overflow: hidden;
+}
+.upload-progress-inner {
+  height: 100%;
+  width: 0%;
+  background: var(--accent-cyan);
+  border-radius: 3px;
+  transition: width 0.15s ease;
+  box-shadow: 0 0 8px var(--accent-cyan);
+}
+
+/* 右侧：历史接收文件列表 */
+.history-panel {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+.history-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+.history-title-box {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+}
+.history-title {
+  font-size: 16px;
+  font-weight: 700;
+  color: #fff;
+}
+.history-count {
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+
+/* 过滤 Chip 与搜索框 */
+.controls-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.filter-chips {
+  display: flex;
+  gap: 6px;
+  overflow-x: auto;
+}
+.chip {
+  padding: 6px 12px;
+  border-radius: 20px;
+  background: #121927;
+  border: 1px solid #23314A;
+  color: var(--text-secondary);
+  font-size: 12px;
+  cursor: pointer;
+}
+.chip:hover {
+  color: #fff;
+  border-color: #3B4D6E;
+}
+.chip.active {
+  background: #0077FF33;
+  color: var(--accent-cyan);
+  border-color: var(--accent-cyan);
+  font-weight: 600;
+}
+.search-input {
+  background: var(--bg-input);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  color: #fff;
+  padding: 6px 14px;
+  font-size: 12px;
+  outline: none;
+  width: 180px;
+}
+.search-input:focus {
+  border-color: var(--accent-cyan);
+  box-shadow: 0 0 8px rgba(0, 240, 255, 0.3);
+}
+
+/* 文件列表表格样式 */
+.file-list-container {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-height: 380px;
+  max-height: 520px;
+  overflow-y: auto;
+}
+.file-row {
+  display: flex;
+  align-items: center;
+  padding: 12px 16px;
+  background: #121926;
+  border: 1px solid #212D42;
+  border-radius: 12px;
+  gap: 14px;
+}
+.file-row:hover {
+  background: var(--bg-card-hover);
+  border-color: #334460;
+}
+.file-icon-box {
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 20px;
+  background: #192336;
+}
+.file-info-main {
+  flex: 1;
+  min-width: 0;
+}
+.file-name {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.file-meta-sub {
+  font-size: 11px;
+  color: var(--text-secondary);
+  display: flex;
+  gap: 12px;
+  margin-top: 3px;
+}
+.file-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.btn-action-icon {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: #182233;
+  color: var(--text-secondary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-size: 14px;
+}
+.btn-action-icon:hover {
+  background: #25334D;
+  color: #fff;
+}
+.btn-action-delete:hover {
+  background: #3B1B22;
+  border-color: var(--accent-red);
+  color: var(--accent-red);
+}
+
+/* 消息 Toast */
+.toast-msg {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  background: #16243A;
+  border: 1px solid var(--accent-cyan);
+  color: #fff;
+  padding: 12px 20px;
+  border-radius: 12px;
+  font-size: 13px;
+  font-weight: 500;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.6);
+  display: none;
+  align-items: center;
+  gap: 10px;
+  z-index: 999;
+}
+
+/* 删除二次确认模态窗 */
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.7);
+  backdrop-filter: blur(4px);
+  display: none;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+.confirm-box {
+  background: var(--bg-card);
+  border: 1px solid var(--accent-red);
+  border-radius: 16px;
+  padding: 24px;
+  width: 360px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  box-shadow: 0 20px 40px rgba(255, 82, 82, 0.2);
+}
+.confirm-title {
+  font-size: 16px;
+  font-weight: 700;
+  color: #fff;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.confirm-desc {
+  font-size: 13px;
+  color: var(--text-secondary);
+  line-height: 1.5;
+}
+.confirm-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+}
+.btn-cancel {
+  background: #1C273B;
+  border: 1px solid var(--border);
+  color: var(--text-secondary);
+  padding: 8px 16px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 12px;
+}
+.btn-delete-confirm {
+  background: var(--accent-red);
+  border: none;
+  color: #fff;
+  padding: 8px 16px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+  </style>
+
+  <!-- 顶部状态导航条 -->
+  <header class="web-header">
+    <div class="brand-section">
+      <div class="brand-logo">📡</div>
+      <div class="brand-text">
+        <h1>TVFile Web 传输中心</h1>
+        <p>局域网免数据线极速互传至电视设备</p>
+      </div>
+    </div>
+
+    <div class="tv-status-badge">
+      <span class="online-pill">
+        <span class="pulse-dot"></span>
+        <span>服务已启动 (端口: 45789)</span>
+      </span>
+      <span style="color:var(--border);">|</span>
+      <span>📺 客厅电视 (小米电视 Pro)</span>
+      <span style="color:var(--border);">|</span>
+      <span style="color:var(--text-secondary);">IP: 192.168.1.108</span>
+    </div>
+  </header>
+
+  <!-- 主栅格区域 -->
+  <div class="main-grid">
+    <!-- 左侧：文件投放与电视存储卡片 -->
+    <div class="upload-panel">
+      <!-- 拖拽投放区 -->
+      <div class="drop-zone" id="drop-zone" onclick="document.getElementById('file-picker').click()">
+        <input type="file" id="file-picker" class="file-input-hidden" multiple onchange="window.tvweb_handleFilesSelected(this.files)">
+        <div class="drop-icon-box">📤</div>
+        <div class="drop-title">点击或拖拽文件到这里</div>
+        <div class="drop-sub">
+          支持 APK 安装包、4K 视频、无损音乐、图片及各类文档<br>
+          <span style="color:var(--accent-cyan);font-weight:600;">文件将直达电视: /storage/emulated/0/tvfile</span>
+        </div>
+      </div>
+
+      <!-- 快速模拟测试按钮 -->
+      <div class="target-info-card">
+        <div style="font-size:12px;font-weight:700;color:#fff;margin-bottom:4px;">⚡ 快速体验模拟上传：</div>
+        <div class="quick-upload-row">
+          <button class="quick-btn" onclick="window.tvweb_simulateUpload('影视仓_TV版_v5.2.0.apk', '28.4 MB', 'apk')">📦 传电视直播.apk</button>
+          <button class="quick-btn" onclick="window.tvweb_simulateUpload('流浪地球2_4K_HDR预告片.mp4', '186.5 MB', 'video')">🎬 传4K视频电影</button>
+          <button class="quick-btn" onclick="window.tvweb_simulateUpload('周杰伦_夜曲_HiRes.flac', '45.2 MB', 'audio')">🎵 传无损音乐</button>
+          <button class="quick-btn" onclick="window.tvweb_simulateUpload('全家福高清壁纸.jpg', '8.6 MB', 'image')">🖼️ 传高清大图</button>
+        </div>
+      </div>
+
+      <!-- 上传中动态卡片 (带实时百分比与 MB/s 速度) -->
+      <div class="uploading-card" id="uploading-card">
+        <div class="uploading-header">
+          <div style="font-weight:600;color:#fff;" id="uploading-filename">正在上传...</div>
+          <div style="color:var(--accent-cyan);font-weight:700;" id="uploading-percent">0%</div>
+        </div>
+        <div class="upload-progress-outer">
+          <div class="upload-progress-inner" id="uploading-bar"></div>
+        </div>
+        <div style="display:flex;justify-content:space-between;font-size:11px;color:var(--text-secondary);">
+          <span id="uploading-speed">24.5 MB/s</span>
+          <span id="uploading-status">传输至 TV: tvfile/ ...</span>
+        </div>
+      </div>
+
+      <!-- 电视存储空间概览 -->
+      <div class="target-info-card">
+        <div class="info-row">
+          <span class="info-label">电视存储目标路径</span>
+          <span class="info-value" style="color:var(--accent-cyan);">/tvfile/</span>
+        </div>
+        <div class="info-row">
+          <span class="info-label">电视内部存储空间</span>
+          <span class="info-value">42.8 GB 可用 / 64 GB</span>
+        </div>
+        <div class="storage-progress-bar">
+          <div class="storage-progress-fill"></div>
+        </div>
+        <div class="info-row" style="font-size:11px;color:var(--text-muted);margin-top:2px;">
+          <span>传输完成后电视端将即时收到通知</span>
+          <span>局域网直连不耗流量</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- 右侧：历史接收文件列表 (支持查看与删除) -->
+    <div class="history-panel">
+      <div class="history-header">
+        <div class="history-title-box">
+          <div class="history-title">📂 已接收文件列表</div>
+          <div class="history-count" id="history-summary">共 6 项 · 占用 268.7 MB</div>
+        </div>
+        <div style="display:flex;gap:8px;">
+          <button class="quick-btn" onclick="window.tvweb_refreshList()">🔄 刷新列表</button>
+          <button class="quick-btn" style="color:var(--accent-red);border-color:#50242b;" onclick="window.tvweb_clearAllHistory()">🗑️ 清空历史</button>
+        </div>
+      </div>
+
+      <!-- 过滤与搜索条 -->
+      <div class="controls-bar">
+        <div class="filter-chips">
+          <div class="chip active" data-type="all" onclick="window.tvweb_setFilter('all')">全部 (<span id="count-all">6</span>)</div>
+          <div class="chip" data-type="apk" onclick="window.tvweb_setFilter('apk')">📦 安装包 (<span id="count-apk">2</span>)</div>
+          <div class="chip" data-type="video" onclick="window.tvweb_setFilter('video')">🎬 视频 (<span id="count-video">2</span>)</div>
+          <div class="chip" data-type="audio" onclick="window.tvweb_setFilter('audio')">🎵 音乐 (<span id="count-audio">1</span>)</div>
+          <div class="chip" data-type="image" onclick="window.tvweb_setFilter('image')">🖼️ 图片 (<span id="count-image">1</span>)</div>
+        </div>
+        <input type="text" class="search-input" id="search-input" placeholder="🔍 搜索文件名..." oninput="window.tvweb_onSearch(this.value)">
+      </div>
+
+      <!-- 文件列表行展示 -->
+      <div class="file-list-container" id="file-list-container">
+        <!-- JS 动态注入 -->
+      </div>
+    </div>
+  </div>
+
+  <!-- 删除确认模态框 -->
+  <div class="modal-backdrop" id="delete-modal">
+    <div class="confirm-box">
+      <div class="confirm-title">
+        <span>⚠️ 确认从电视删除文件？</span>
+      </div>
+      <div class="confirm-desc">
+        您即将永久删除电视端文件：<br>
+        <b style="color:#fff;" id="modal-delete-filename">未知文件</b><br>
+        <span style="font-size:11px;color:var(--accent-red);margin-top:6px;display:block;">此操作将直接从电视内部存储的 tvfile 文件夹中移除该文件。</span>
+      </div>
+      <div class="confirm-actions">
+        <button class="btn-cancel" onclick="window.tvweb_closeDeleteModal()">取消</button>
+        <button class="btn-delete-confirm" onclick="window.tvweb_confirmDelete()">确认删除</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast 提示 -->
+  <div class="toast-msg" id="toast-msg">
+    <span style="font-size:18px;">✅</span>
+    <span id="toast-text">操作成功</span>
+  </div>
+</div>
+
+<script>
+(function() {
+  const root = document.getElementById('tvfile-web-root');
+  if (!root) return;
+
+  // 初始模拟已接收文件数据
+  let receivedFiles = [
+    { id: '1', name: '电视家直播_TVBox_v4.2.1.apk', size: '28.5 MB', type: 'apk', icon: '🤖', time: '今天 14:22', sizeBytes: 29884416 },
+    { id: '2', name: '奥本海默_4K_IMAX预告片.mp4', size: '142.8 MB', type: 'video', icon: '🎬', time: '今天 13:58', sizeBytes: 149737472 },
+    { id: '3', name: '周杰伦-七里香_无损24bit.flac', size: '42.3 MB', type: 'audio', icon: '🎵', time: '昨天 21:10', sizeBytes: 44354764 },
+    { id: '4', name: 'Kodi_MediaCenter_v21.0.apk', size: '48.2 MB', type: 'apk', icon: '📦', time: '昨天 19:40', sizeBytes: 50541363 },
+    { id: '5', name: '珠峰日落全景壁纸.jpg', size: '6.9 MB', type: 'image', icon: '🖼️', time: '10-19 16:30', sizeBytes: 7235174 },
+    { id: '6', name: '阿凡达2_水之道_花絮.mkv', size: '98.0 MB', type: 'video', icon: '🎬', time: '10-18 10:15', sizeBytes: 102760448 }
+  ];
+
+  let currentFilter = 'all';
+  let currentKeyword = '';
+  let pendingDeleteId = null;
+
+  // 渲染文件列表
+  function renderList() {
+    const container = root.querySelector('#file-list-container');
+    container.innerHTML = '';
+
+    // 过滤
+    let filtered = receivedFiles.filter(item => {
+      const matchType = (currentFilter === 'all') || (item.type === currentFilter);
+      const matchKw = currentKeyword.trim() === '' || item.name.toLowerCase().includes(currentKeyword.toLowerCase());
+      return matchType && matchKw;
+    });
+
+    // 更新各分类计数
+    root.querySelector('#count-all').innerText = receivedFiles.length;
+    root.querySelector('#count-apk').innerText = receivedFiles.filter(i => i.type === 'apk').length;
+    root.querySelector('#count-video').innerText = receivedFiles.filter(i => i.type === 'video').length;
+    root.querySelector('#count-audio').innerText = receivedFiles.filter(i => i.type === 'audio').length;
+    root.querySelector('#count-image').innerText = receivedFiles.filter(i => i.type === 'image').length;
+
+    // 更新总结
+    let totalBytes = receivedFiles.reduce((acc, cur) => acc + (cur.sizeBytes || 0), 0);
+    let totalMb = (totalBytes / (1024 * 1024)).toFixed(1);
+    root.querySelector('#history-summary').innerText = `共 ${receivedFiles.length} 项 · 占用 ${totalMb} MB`;
+
+    if (filtered.length === 0) {
+      container.innerHTML = `
+        <div style="text-align:center;padding:48px 20px;color:var(--text-muted);font-size:13px;">
+          <div style="font-size:36px;margin-bottom:8px;">📭</div>
+          未找到匹配的历史接收文件
+        </div>
+      `;
+      return;
+    }
+
+    filtered.forEach(file => {
+      const row = document.createElement('div');
+      row.className = 'file-row';
+      row.innerHTML = `
+        <div class="file-icon-box">${file.icon}</div>
+        <div class="file-info-main">
+          <div class="file-name" title="${file.name}">${file.name}</div>
+          <div class="file-meta-sub">
+            <span>💾 ${file.size}</span>
+            <span>🕒 ${file.time}</span>
+            <span style="color:var(--accent-cyan);">📁 tvfile/</span>
+          </div>
+        </div>
+        <div class="file-actions">
+          <button class="btn-action-icon" onclick="window.tvweb_downloadFile('${file.name}')" title="下载到本地电脑/手机">📥</button>
+          <button class="btn-action-icon btn-action-delete" onclick="window.tvweb_openDeleteModal('${file.id}', '${file.name}')" title="从电视删除此文件">🗑️</button>
+        </div>
+      `;
+      container.appendChild(row);
+    });
+  }
+
+  // 分类与搜索过滤
+  window.tvweb_setFilter = function(type) {
+    currentFilter = type;
+    root.querySelectorAll('.chip').forEach(c => {
+      c.classList.toggle('active', c.getAttribute('data-type') === type);
+    });
+    renderList();
+  };
+
+  window.tvweb_onSearch = function(val) {
+    currentKeyword = val;
+    renderList();
+  };
+
+  window.tvweb_refreshList = function() {
+    showToast('已刷新电视端接收文件列表');
+    renderList();
+  };
+
+  window.tvweb_clearAllHistory = function() {
+    if (receivedFiles.length === 0) return;
+    if (confirm('确认清空电视端 tvfile 目录下的所有已接收文件吗？')) {
+      receivedFiles = [];
+      renderList();
+      showToast('已清空全部接收文件');
+    }
+  };
+
+  // 删除弹窗与确认
+  window.tvweb_openDeleteModal = function(id, name) {
+    pendingDeleteId = id;
+    root.querySelector('#modal-delete-filename').innerText = name;
+    root.querySelector('#delete-modal').style.display = 'flex';
+  };
+
+  window.tvweb_closeDeleteModal = function() {
+    pendingDeleteId = null;
+    root.querySelector('#delete-modal').style.display = 'none';
+  };
+
+  window.tvweb_confirmDelete = function() {
+    if (!pendingDeleteId) return;
+    receivedFiles = receivedFiles.filter(item => item.id !== pendingDeleteId);
+    window.tvweb_closeDeleteModal();
+    renderList();
+    showToast('已成功从电视删除该文件');
+  };
+
+  window.tvweb_downloadFile = function(fileName) {
+    showToast('已启动下载: ' + fileName);
+  };
+
+  // 模拟上传处理
+  window.tvweb_simulateUpload = function(name, size, type) {
+    const card = root.querySelector('#uploading-card');
+    const bar = root.querySelector('#uploading-bar');
+    const percentEl = root.querySelector('#uploading-percent');
+    const fnEl = root.querySelector('#uploading-filename');
+
+    fnEl.innerText = '正在传输: ' + name;
+    card.style.display = 'flex';
+    let progress = 0;
+
+    const interval = setInterval(() => {
+      progress += Math.floor(Math.random() * 18) + 12;
+      if (progress > 100) progress = 100;
+      bar.style.width = progress + '%';
+      percentEl.innerText = progress + '%';
+
+      if (progress >= 100) {
+        clearInterval(interval);
+        setTimeout(() => {
+          card.style.display = 'none';
+          bar.style.width = '0%';
+          // 添加到接收列表
+          let icon = '📄';
+          if (type === 'apk') icon = '🤖';
+          if (type === 'video') icon = '🎬';
+          if (type === 'audio') icon = '🎵';
+          if (type === 'image') icon = '🖼️';
+
+          receivedFiles.unshift({
+            id: String(Date.now()),
+            name: name,
+            size: size,
+            type: type,
+            icon: icon,
+            time: '刚刚',
+            sizeBytes: parseFloat(size) * 1024 * 1024
+          });
+          renderList();
+          showToast('传输成功！已写入电视 /tvfile/ 目录');
+        }, 600);
+      }
+    }, 200);
+  };
+
+  // 真实多文件选择处理
+  window.tvweb_handleFilesSelected = function(fileList) {
+    if (!fileList || fileList.length === 0) return;
+    const file = fileList[0];
+    const sizeMb = (file.size / (1024 * 1024)).toFixed(1) + ' MB';
+    const ext = file.name.substring(file.name.lastIndexOf('.') + 1).toLowerCase();
+    
+    let type = 'doc';
+    if (['mp4', 'mkv', 'avi', 'mov'].includes(ext)) type = 'video';
+    else if (['mp3', 'flac', 'wav', 'aac'].includes(ext)) type = 'audio';
+    else if (['jpg', 'png', 'jpeg', 'webp'].includes(ext)) type = 'image';
+    else if (['apk'].includes(ext)) type = 'apk';
+
+    window.tvweb_simulateUpload(file.name, sizeMb, type);
+  };
+
+  // 拖拽高亮交互
+  const dropZone = root.querySelector('#drop-zone');
+  dropZone.addEventListener('dragover', (e) => {
+    e.preventDefault();
+    dropZone.classList.add('dragover');
+  });
+  dropZone.addEventListener('dragleave', () => {
+    dropZone.classList.remove('dragover');
+  });
+  dropZone.addEventListener('drop', (e) => {
+    e.preventDefault();
+    dropZone.classList.remove('dragover');
+    if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+      window.tvweb_handleFilesSelected(e.dataTransfer.files);
+    }
+  });
+
+  function showToast(msg) {
+    const t = root.querySelector('#toast-msg');
+    const txt = root.querySelector('#toast-text');
+    txt.innerText = msg;
+    t.style.display = 'flex';
+    setTimeout(() => {
+      t.style.display = 'none';
+    }, 3000);
+  }
+
+  // 初始渲染
+  renderList();
+
+})();
+</script>
+
+</body>
+</html>

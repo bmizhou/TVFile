@@ -32,6 +32,269 @@
       font-size: 13px;
     }
   
+
+
+/* 精准对标用户截图样式的已接收文件面板 */
+.tv-received-panel {
+  background: #0E1522;
+  border: 1px solid #1E2D44;
+  border-radius: 20px;
+  padding: 20px 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+  flex: 1;
+  overflow: hidden;
+}
+.panel-top-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.panel-title-group {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.folder-icon-glow {
+  color: #F59E0B;
+  font-size: 20px;
+}
+.panel-main-title {
+  font-size: 17px;
+  font-weight: 700;
+  color: #FFFFFF;
+  letter-spacing: 0.5px;
+}
+.panel-sub-count {
+  font-size: 13px;
+  color: #8B9BB4;
+  font-weight: normal;
+}
+.panel-top-actions {
+  display: flex;
+  gap: 10px;
+}
+.btn-panel-action {
+  background: #152238;
+  border: 1px solid #283955;
+  color: #CBD5E1;
+  padding: 6px 14px;
+  border-radius: 8px;
+  font-size: 12px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-weight: 500;
+}
+.btn-panel-action:hover {
+  background: #1F3252;
+  border-color: #00F0FF;
+  color: #fff;
+}
+.btn-panel-danger {
+  color: #FF5252;
+  border-color: #4A1E24;
+}
+.btn-panel-danger:hover {
+  background: #4A1E24;
+  border-color: #FF5252;
+  color: #FF5252;
+}
+
+/* 截图中精准一致的分类过滤 Chip 栏 */
+.chips-filter-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.img-style-chip {
+  padding: 6px 14px;
+  border-radius: 20px;
+  background: #131B2A;
+  border: 1px solid #23314A;
+  color: #94A3B8;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.img-style-chip:hover {
+  color: #fff;
+  border-color: #384F75;
+}
+.img-style-chip.active {
+  background: #0B2538;
+  color: #00F0FF;
+  border: 1.5px solid #00F0FF;
+  box-shadow: 0 0 10px rgba(0, 240, 255, 0.3);
+  font-weight: 600;
+}
+
+/* 搜索胶囊框 */
+.search-capsule-box {
+  background: #0B111C;
+  border: 1px solid #1E2D44;
+  border-radius: 12px;
+  padding: 7px 14px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 220px;
+}
+.search-capsule-input {
+  background: transparent;
+  border: none;
+  outline: none;
+  color: #fff;
+  font-size: 12px;
+  width: 100%;
+}
+.search-capsule-input::placeholder {
+  color: #556987;
+}
+
+/* 截图里的文件行卡片 */
+.screenshot-file-card {
+  background: #101826;
+  border: 1px solid #1E2D44;
+  border-radius: 14px;
+  padding: 12px 18px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+.screenshot-file-card:hover {
+  background: #162235;
+  border-color: #2D4366;
+}
+.screenshot-file-card.tv-focus-target {
+  box-shadow: 0 0 16px rgba(0,240,255,0.6), 0 0 0 2px #00F0FF !important;
+  transform: scale(1.02);
+  background: #18263D !important;
+  border-color: #00F0FF !important;
+}
+.file-thumb-box {
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  background: #162033;
+  border: 1px solid #23314A;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 22px;
+  flex-shrink: 0;
+}
+.file-middle-info {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.file-main-name {
+  font-size: 13.5px;
+  font-weight: 700;
+  color: #FFFFFF;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.file-meta-row {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  font-size: 11.5px;
+  color: #8B9BB4;
+}
+.meta-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+.badge-tvfile-path {
+  color: #00F0FF;
+  font-weight: 500;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+.card-right-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.btn-card-square {
+  width: 34px;
+  height: 34px;
+  border-radius: 8px;
+  background: #152033;
+  border: 1px solid #253652;
+  color: #8B9BB4;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-size: 14px;
+}
+.btn-card-square:hover {
+  background: #202F4A;
+  color: #fff;
+  border-color: #00F0FF;
+}
+.btn-card-square.btn-delete:hover {
+  background: #3B1B22;
+  border-color: #FF5252;
+  color: #FF5252;
+}
+
+/* 顶部服务控制栏 (卡片化) */
+.http-server-control-bar {
+  background: #101726;
+  border: 1px solid #202F47;
+  border-radius: 16px;
+  padding: 16px 20px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 14px;
+}
+.server-switch-btn {
+  padding: 8px 18px;
+  border-radius: 10px;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  border: 1px solid transparent;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.server-switch-on {
+  background: #00E676;
+  color: #0B111C;
+}
+.server-switch-on:hover {
+  background: #33EB91;
+  box-shadow: 0 0 14px rgba(0, 230, 118, 0.4);
+}
+.server-switch-off {
+  background: #3B1A22;
+  color: #FF5252;
+  border-color: #FF525266;
+}
+.server-switch-off:hover {
+  background: #FF5252;
+  color: #fff;
+}
+
 /* 竖屏模式样式支持 */
 .tv-frame.portrait-mode {
   width: 420px !important;
@@ -912,6 +1175,7 @@
     </div>
     <div class="scenario-btns">
       <button class="scenario-btn" id="btn-toggle-orientation" onclick="window.tvfile_toggleOrientation()" style="background:#ff980022;color:#ffb74d;border-color:#ff9800;">📱 切换竖屏/横屏模式</button>
+      <button class="scenario-btn" id="btn-scene-web" onclick="window.tvfile_switchScene('web')">🌐 ⑥ Web 局域网传输</button>
       <button class="scenario-btn active" id="btn-scene-internal" onclick="window.tvfile_switchScene('internal')">① 内部存储 (网格+过滤)</button>
       <button class="scenario-btn" id="btn-scene-usb-list" onclick="window.tvfile_switchScene('usb-list')">② 外接存储第1层 (U盘列表/无过滤)</button>
       <button class="scenario-btn" id="btn-scene-usb-files" onclick="window.tvfile_switchScene('usb-files')">③ U盘第2层 (文件列表+顶部过滤)</button>
@@ -933,7 +1197,7 @@
         <div class="brand-badge">
           <div class="brand-dot"></div>
           <span>TVFile</span>
-          <span style="font-size:11px;color:#00f0ff;background:#0077ff22;padding:2px 8px;border-radius:10px;border:1px solid #00f0ff44;">TV Edition</span>
+          
         </div>
         <div class="status-info">
           <span id="active-device-name">内部存储</span>
@@ -977,6 +1241,15 @@
               </div>
             </div>
 
+            
+            <!-- Tab 5: Web 传输 (端口: 45789) -->
+            <div class="nav-tab-item focusable" id="tab-web" data-tab="web" onclick="window.tvfile_onTabClick('web')">
+              <div class="tab-icon">📡</div>
+              <div class="tab-info">
+                <span class="tab-name">Web 传输</span>
+                <span class="tab-sub"><span style="color:#00f0ff;">HTTP: 45789</span></span>
+              </div>
+            </div>
             <!-- Tab 4: 传输任务 -->
             <div class="nav-tab-item focusable" id="tab-transfer" data-tab="transfer" onclick="window.tvfile_onTabClick('transfer')">
               <div class="tab-icon">⚡</div>
@@ -1279,7 +1552,11 @@
     const btn = root.querySelector('#btn-scene-' + scene);
     if (btn) btn.classList.add('active');
 
-    if (scene === 'internal') {
+    if (scene === 'web') {
+      state.currentTab = 'web';
+      state.level = 1;
+      state.selectedDeviceName = 'Web 局域网传输服务';
+    } else if (scene === 'internal') {
       state.currentTab = 'internal';
       state.level = 2;
       state.selectedDeviceName = '内部存储';
@@ -1308,7 +1585,10 @@
 
   window.tvfile_onTabClick = function(tabName) {
     state.currentTab = tabName;
-    if (tabName === 'internal') {
+    if (tabName === 'web') {
+      state.level = 1;
+      state.selectedDeviceName = 'Web 局域网传输服务';
+    } else if (tabName === 'internal') {
       state.level = 2;
       state.selectedDeviceName = '内部存储';
     } else if (tabName === 'usb') {
@@ -1459,7 +1739,10 @@
   });
 
   function renderUI() {
-    ['internal', 'usb', 'network', 'transfer'].forEach(t => {
+    const wrapper = root.querySelector('#dynamic-content-wrapper');
+    if (wrapper) wrapper.innerHTML = '';
+
+    ['internal', 'usb', 'network', 'web', 'transfer'].forEach(t => {
       const el = root.querySelector('#tab-' + t);
       if (el) el.classList.toggle('active', state.currentTab === t);
     });
@@ -1468,11 +1751,32 @@
     const crumbCurrent = root.querySelector('#crumb-current');
     const filterBar = root.querySelector('#filter-bar');
     const btnAddServer = root.querySelector('#btn-add-server');
+    const btnToggleView = root.querySelector('#btn-toggle-view');
+    const btnPaste = root.querySelector('#btn-paste');
     const viewIcon = root.querySelector('#view-icon');
     const viewText = root.querySelector('#view-text');
 
     viewIcon.innerText = state.viewMode === 'grid' ? '▦' : '▤';
     viewText.innerText = state.viewMode === 'grid' ? '列表视图' : '网格视图';
+
+    // 当处于 Web 传输模式时
+    if (state.currentTab === 'web') {
+      filterBar.style.display = 'none';
+      btnAddServer.style.display = 'none';
+      if (btnToggleView) btnToggleView.style.display = 'none';
+      if (btnPaste) btnPaste.style.display = 'none';
+      crumbCurrent.innerText = 'Web 局域网传输 (端口: 45789)';
+      if (wrapper) renderWebTransferView(wrapper);
+      
+      state.focusedIndex = 0;
+      const firstFocus = root.querySelector('.content-scrollable .focusable');
+      if (firstFocus) firstFocus.classList.add('tv-focus-target');
+      return;
+    }
+
+    // 非 Web 传输模式，恢复控制按钮
+    if (btnToggleView) btnToggleView.style.display = 'inline-flex';
+    if (btnPaste) btnPaste.style.display = 'inline-flex';
 
     const isDeviceListLevel = (state.currentTab === 'usb' || state.currentTab === 'network') && state.level === 1;
 
@@ -1494,13 +1798,12 @@
       c.classList.toggle('active', c.getAttribute('data-cat') === state.filterCategory);
     });
 
-    const wrapper = root.querySelector('#dynamic-content-wrapper');
-    wrapper.innerHTML = '';
-
-    if (isDeviceListLevel) {
-      renderDeviceList(wrapper);
-    } else {
-      renderFileList(wrapper);
+    if (wrapper) {
+      if (isDeviceListLevel) {
+        renderDeviceList(wrapper);
+      } else {
+        renderFileList(wrapper);
+      }
     }
 
     state.focusedIndex = 0;
@@ -1508,7 +1811,133 @@
     if (firstFocus) firstFocus.classList.add('tv-focus-target');
   }
 
-  function renderDeviceList(container) {
+  
+  
+  function renderWebTransferView(container) {
+    const wrapper = document.createElement('div');
+    wrapper.style.display = 'flex';
+    wrapper.style.flexDirection = 'column';
+    wrapper.style.gap = '14px';
+    wrapper.style.height = '100%';
+    wrapper.style.overflow = 'hidden';
+
+    // 1. 顶部：开启/关闭 HTTP 服务器功能栏 + 开启后展示对应的 URL
+    const topBar = document.createElement('div');
+    topBar.className = 'http-server-control-bar';
+    topBar.innerHTML = `
+      <div style="display:flex;align-items:center;gap:14px;flex:1;">
+        <button class="server-switch-btn ${isHttpServerStarted ? 'server-switch-off' : 'server-switch-on'} focusable" onclick="window.tvweb_toggleHttpServer()">
+          ${isHttpServerStarted ? '⏹ 关闭 HTTP 服务' : '▶ 开启 HTTP 服务'}
+        </button>
+        ${isHttpServerStarted ? `
+          <div style="display:flex;align-items:center;gap:10px;">
+            <span style="display:inline-flex;align-items:center;gap:6px;color:#00E676;font-size:12px;font-weight:600;">
+              <span style="width:8px;height:8px;border-radius:50%;background:#00E676;box-shadow:0 0 8px #00E676;"></span>
+              服务已启动 (端口: 45789)
+            </span>
+            <div style="background:#070C14;border:1px solid #1E2D44;padding:6px 14px;border-radius:8px;font-family:monospace;font-size:13px;color:#00F0FF;display:inline-flex;align-items:center;gap:6px;">
+              <span>🌐</span>
+              <span style="font-weight:700;">http://192.168.1.108:45789</span>
+            </div>
+          </div>
+        ` : `
+          <span style="color:#8B9BB4;font-size:12px;">HTTP 服务未开启，点击开启后局域网电脑/手机即可免线直传文件至电视</span>
+        `}
+      </div>
+      ${isHttpServerStarted ? `
+        <div style="font-size:11px;color:#8B9BB4;display:flex;align-items:center;gap:12px;">
+          <span>📁 保存目录: <b style="color:#00F0FF;">/storage/emulated/0/tvfile/</b></span>
+          <div style="background:#070C14;border:1px solid #1E2D44;padding:4px 8px;border-radius:6px;color:#CBD5E1;font-size:11px;">📱 手机扫码直达</div>
+        </div>
+      ` : ''}
+    `;
+    wrapper.appendChild(topBar);
+
+    // 2. 下方：类似用户截图样式的「已接收文件列表」完整面板
+    const panel = document.createElement('div');
+    panel.className = 'tv-received-panel';
+
+    // 过滤逻辑
+    let filtered = webReceivedFiles.filter(item => {
+      const matchType = (currentWebFilter === 'all') || (item.type === currentWebFilter);
+      const matchKw = currentWebSearch.trim() === '' || item.name.toLowerCase().includes(currentWebSearch.toLowerCase());
+      return matchType && matchKw;
+    });
+
+    let countAll = webReceivedFiles.length;
+    let countApk = webReceivedFiles.filter(f => f.type === 'apk').length;
+    let countVideo = webReceivedFiles.filter(f => f.type === 'video').length;
+    let countAudio = webReceivedFiles.filter(f => f.type === 'audio').length;
+    let countImage = webReceivedFiles.filter(f => f.type === 'image').length;
+
+    panel.innerHTML = `
+      <!-- 面板顶栏 (与截图 1:1) -->
+      <div class="panel-top-row">
+        <div class="panel-title-group">
+          <span class="folder-icon-glow">📁</span>
+          <span class="panel-main-title">已接收文件列表</span>
+          <span class="panel-sub-count">共 ${countAll} 项 · 占用 366.7 MB</span>
+        </div>
+        <div class="panel-top-actions">
+          <button class="btn-panel-action focusable" onclick="window.tvweb_refreshList()">
+            <span>🔄</span> 刷新列表
+          </button>
+          <button class="btn-panel-action btn-panel-danger focusable" onclick="window.tvweb_clearAllHistory()">
+            <span>🗑️</span> 清空历史
+          </button>
+        </div>
+      </div>
+
+      <!-- 分类 Chip 过滤栏 (与截图 1:1) -->
+      <div class="chips-filter-row">
+        <div class="img-style-chip ${currentWebFilter === 'all' ? 'active' : ''} focusable" onclick="window.tvweb_setWebFilter('all')">
+          全部 (${countAll})
+        </div>
+        <div class="img-style-chip ${currentWebFilter === 'apk' ? 'active' : ''} focusable" onclick="window.tvweb_setWebFilter('apk')">
+          <span>📦</span> 安装包 (${countApk})
+        </div>
+        <div class="img-style-chip ${currentWebFilter === 'video' ? 'active' : ''} focusable" onclick="window.tvweb_setWebFilter('video')">
+          <span>🎬</span> 视频 (${countVideo})
+        </div>
+        <div class="img-style-chip ${currentWebFilter === 'audio' ? 'active' : ''} focusable" onclick="window.tvweb_setWebFilter('audio')">
+          <span>🎵</span> 音乐 (${countAudio})
+        </div>
+        <div class="img-style-chip ${currentWebFilter === 'image' ? 'active' : ''} focusable" onclick="window.tvweb_setWebFilter('image')">
+          <span>🖼️</span> 图片 (${countImage})
+        </div>
+      </div>
+
+
+
+      <!-- 文件列表 (与截图卡片 1:1) -->
+      <div style="display:flex;flex-direction:column;gap:10px;overflow-y:auto;flex:1;padding-right:4px;">
+        ${filtered.length === 0 ? `
+          <div style="text-align:center;padding:40px;color:#556987;font-size:13px;">未找到匹配的文件</div>
+        ` : filtered.map(file => `
+          <div class="screenshot-file-card focusable">
+            <div class="file-thumb-box">${file.icon}</div>
+            <div class="file-middle-info">
+              <div class="file-main-name" title="${file.name}">${file.name}</div>
+              <div class="file-meta-row">
+                <span class="meta-item">💾 ${file.size}</span>
+                <span class="meta-item">🕒 ${file.time}</span>
+                <span class="badge-tvfile-path">📁 tvfile/</span>
+              </div>
+            </div>
+            <div class="card-right-actions">
+              <button class="btn-card-square focusable" onclick="window.tvweb_downloadFile('${file.name}')" title="下载/打开">📥</button>
+              <button class="btn-card-square btn-delete focusable" onclick="window.tvweb_deleteFile('${file.id}', '${file.name}')" title="删除文件">🗑️</button>
+            </div>
+          </div>
+        `).join('')}
+      </div>
+    `;
+
+    wrapper.appendChild(panel);
+    container.appendChild(wrapper);
+  }
+
+function renderDeviceList(container) {
     const grid = document.createElement('div');
     grid.className = 'device-grid';
 
@@ -1657,6 +2086,61 @@
       btn.style.background = '#ff980022';
       btn.style.color = '#ffb74d';
     }
+  };
+
+  
+  // Web 传输数据与状态
+  
+  // 精准对标用户截图的 6 个接收文件数据
+  let isHttpServerStarted = true;
+  let webReceivedFiles = [
+    { id: 'w1', name: '电视家直播_TVBox_v4.2.1.apk', size: '28.5 MB', time: '今天 14:22', type: 'apk', icon: '🤖' },
+    { id: 'w2', name: '奥本海默_4K_IMAX预告片.mp4', size: '142.8 MB', time: '今天 13:58', type: 'video', icon: '🎬' },
+    { id: 'w3', name: '周杰伦-七里香_无损24bit.flac', size: '42.3 MB', time: '昨天 21:10', type: 'audio', icon: '🎵' },
+    { id: 'w4', name: 'Kodi_MediaCenter_v21.0.apk', size: '48.2 MB', time: '昨天 19:40', type: 'apk', icon: '📦' },
+    { id: 'w5', name: '珠峰日落全景壁纸.jpg', size: '6.9 MB', time: '10-19 16:30', type: 'image', icon: '🖼️' },
+    { id: 'w6', name: '阿凡达2_水之道_花絮.mkv', size: '98.0 MB', time: '10-18 10:15', type: 'video', icon: '🎬' }
+  ];
+
+  let currentWebFilter = 'all';
+  let currentWebSearch = '';
+
+  window.tvweb_toggleHttpServer = function() {
+    isHttpServerStarted = !isHttpServerStarted;
+    renderUI();
+  };
+
+  window.tvweb_setWebFilter = function(category) {
+    currentWebFilter = category;
+    renderUI();
+  };
+
+  window.tvweb_onWebSearch = function(val) {
+    currentWebSearch = val;
+    renderUI();
+  };
+
+  window.tvweb_refreshList = function() {
+    alert('已刷新电视端接收文件列表');
+    renderUI();
+  };
+
+  window.tvweb_clearAllHistory = function() {
+    if (confirm('确认清空电视端 tvfile 目录下的所有已接收文件吗？')) {
+      webReceivedFiles = [];
+      renderUI();
+    }
+  };
+
+  window.tvweb_deleteFile = function(id, name) {
+    if (confirm('确认从电视内部存储 tvfile/ 中删除该文件吗？\n文件: ' + name)) {
+      webReceivedFiles = webReceivedFiles.filter(f => f.id !== id);
+      renderUI();
+    }
+  };
+
+  window.tvweb_downloadFile = function(name) {
+    alert('已通过内置 HTTP 启动下载: ' + name);
   };
 
   // 初始启动

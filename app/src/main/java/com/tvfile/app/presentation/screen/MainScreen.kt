@@ -43,6 +43,13 @@ fun MainScreen(
     val servers by viewModel.servers.collectAsState()
     val playbackProgressMap by viewModel.playbackProgressMap.collectAsState()
 
+    // Web 传输状态
+    val isHttpServerRunning by viewModel.isHttpServerRunning.collectAsState()
+    val webServerUrl by viewModel.webServerUrl.collectAsState()
+    val receivedFiles by viewModel.receivedFiles.collectAsState()
+    val filteredReceivedFiles by viewModel.filteredReceivedFiles.collectAsState()
+    val webFilterCategory by viewModel.webFilterCategory.collectAsState()
+
     val activeVideoUrl by viewModel.activeVideoUrl.collectAsState()
     val activeAudioUrl by viewModel.activeAudioUrl.collectAsState()
     val activeImageFile by viewModel.activeImageFile.collectAsState()
@@ -66,7 +73,7 @@ fun MainScreen(
             .background(TVBackground)
     ) {
         Column(modifier = Modifier.fillMaxSize()) {
-            // 1. 顶部状态栏
+            // 1. 顶部状态栏 (已去掉 TV Edition)
             TopStatusBar(
                 activeTitle = currentDevice?.name ?: currentTab.displayName
             )
@@ -87,44 +94,21 @@ fun MainScreen(
                         .fillMaxWidth()
                         .weight(1f)
                 ) {
-                    MainContentSection(
-                        currentTab = currentTab,
-                        level = level,
-                        currentDeviceName = currentDevice?.name ?: currentTab.displayName,
-                        currentPath = currentPath,
-                        viewMode = viewMode,
-                        filterCategory = filterCategory,
-                        files = files,
-                        usbDevices = usbDevices,
-                        servers = servers,
-                        playbackProgressMap = playbackProgressMap,
-                        canPaste = clipboard != null && clipboard!!.files.isNotEmpty(),
-                        onRootClick = { viewModel.selectTab(currentTab) },
-                        onToggleView = { viewModel.toggleViewMode() },
-                        onPaste = { viewModel.pasteToCurrent() },
-                        onCategorySelected = { cat -> viewModel.setFilterCategory(cat) },
-                        onDeviceClick = { dev -> viewModel.enterDevice(dev) },
-                        onAddServerClick = { viewModel.setAddServerDialogOpen(true) },
-                        onFileClick = { file -> viewModel.openFile(file) },
-                        onFileLongClick = { file -> viewModel.openContextMenu(file) }
-                    )
-                }
-            } else {
-                // 【横屏模式】：维持原左侧 Tab 栏 + 右侧内容区双栏布局
-                Row(modifier = Modifier.fillMaxSize()) {
-                    Sidebar(
-                        selectedTab = currentTab,
-                        onTabSelected = { tab -> viewModel.selectTab(tab) },
-                        modifier = Modifier
-                            .width(220.dp)
-                            .fillMaxHeight()
-                    )
-
-                    Column(
-                        modifier = Modifier
-                            .weight(1f)
-                            .fillMaxHeight()
-                    ) {
+                    if (currentTab == StorageType.WEB_TRANSFER) {
+                        WebTransferScreen(
+                            isServerRunning = isHttpServerRunning,
+                            serverUrl = webServerUrl,
+                            files = filteredReceivedFiles,
+                            totalFilesCount = receivedFiles.size,
+                            selectedCategory = webFilterCategory,
+                            onToggleServer = { viewModel.toggleHttpServer() },
+                            onCategorySelected = { cat -> viewModel.setWebFilterCategory(cat) },
+                            onRefreshList = { viewModel.refreshReceivedFiles() },
+                            onClearAll = { viewModel.clearAllReceivedFiles() },
+                            onFileClick = { file -> viewModel.openFile(file) },
+                            onDeleteFile = { file -> viewModel.deleteReceivedFile(file) }
+                        )
+                    } else {
                         MainContentSection(
                             currentTab = currentTab,
                             level = level,
@@ -146,6 +130,61 @@ fun MainScreen(
                             onFileClick = { file -> viewModel.openFile(file) },
                             onFileLongClick = { file -> viewModel.openContextMenu(file) }
                         )
+                    }
+                }
+            } else {
+                // 【横屏模式】：维持原左侧 Tab 栏 + 右侧内容区双栏布局
+                Row(modifier = Modifier.fillMaxSize()) {
+                    Sidebar(
+                        selectedTab = currentTab,
+                        onTabSelected = { tab -> viewModel.selectTab(tab) },
+                        modifier = Modifier
+                            .width(220.dp)
+                            .fillMaxHeight()
+                    )
+
+                    Column(
+                        modifier = Modifier
+                            .weight(1f)
+                            .fillMaxHeight()
+                    ) {
+                        if (currentTab == StorageType.WEB_TRANSFER) {
+                            WebTransferScreen(
+                                isServerRunning = isHttpServerRunning,
+                                serverUrl = webServerUrl,
+                                files = filteredReceivedFiles,
+                                totalFilesCount = receivedFiles.size,
+                                selectedCategory = webFilterCategory,
+                                onToggleServer = { viewModel.toggleHttpServer() },
+                                onCategorySelected = { cat -> viewModel.setWebFilterCategory(cat) },
+                                onRefreshList = { viewModel.refreshReceivedFiles() },
+                                onClearAll = { viewModel.clearAllReceivedFiles() },
+                                onFileClick = { file -> viewModel.openFile(file) },
+                                onDeleteFile = { file -> viewModel.deleteReceivedFile(file) }
+                            )
+                        } else {
+                            MainContentSection(
+                                currentTab = currentTab,
+                                level = level,
+                                currentDeviceName = currentDevice?.name ?: currentTab.displayName,
+                                currentPath = currentPath,
+                                viewMode = viewMode,
+                                filterCategory = filterCategory,
+                                files = files,
+                                usbDevices = usbDevices,
+                                servers = servers,
+                                playbackProgressMap = playbackProgressMap,
+                                canPaste = clipboard != null && clipboard!!.files.isNotEmpty(),
+                                onRootClick = { viewModel.selectTab(currentTab) },
+                                onToggleView = { viewModel.toggleViewMode() },
+                                onPaste = { viewModel.pasteToCurrent() },
+                                onCategorySelected = { cat -> viewModel.setFilterCategory(cat) },
+                                onDeviceClick = { dev -> viewModel.enterDevice(dev) },
+                                onAddServerClick = { viewModel.setAddServerDialogOpen(true) },
+                                onFileClick = { file -> viewModel.openFile(file) },
+                                onFileLongClick = { file -> viewModel.openContextMenu(file) }
+                            )
+                        }
                     }
                 }
             }
@@ -231,7 +270,7 @@ private fun PortraitTopTabBar(
 ) {
     Row(
         modifier = modifier,
-        horizontalArrangement = Arrangement.spacedBy(10.dp)
+        horizontalArrangement = Arrangement.spacedBy(8.dp)
     ) {
         PortraitTabItem(
             title = "内部存储",
@@ -254,6 +293,13 @@ private fun PortraitTopTabBar(
             onClick = { onTabSelected(StorageType.SMB) },
             modifier = Modifier.weight(1f)
         )
+        PortraitTabItem(
+            title = "Web 传输",
+            icon = Icons.Default.CloudSync,
+            isSelected = selectedTab == StorageType.WEB_TRANSFER,
+            onClick = { onTabSelected(StorageType.WEB_TRANSFER) },
+            modifier = Modifier.weight(1f)
+        )
     }
 }
 
@@ -273,7 +319,7 @@ private fun PortraitTabItem(
     ) {
         Column(
             modifier = Modifier
-                .padding(vertical = 8.dp, horizontal = 4.dp)
+                .padding(vertical = 8.dp, horizontal = 2.dp)
                 .fillMaxWidth(),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center
@@ -282,13 +328,13 @@ private fun PortraitTabItem(
                 imageVector = icon,
                 contentDescription = null,
                 tint = if (isSelected) TVAccentCyan else TVTextSecondary,
-                modifier = Modifier.size(24.dp)
+                modifier = Modifier.size(22.dp)
             )
             Spacer(modifier = Modifier.height(4.dp))
             Text(
                 text = title,
                 color = if (isSelected) Color.White else TVTextPrimary,
-                fontSize = 11.sp,
+                fontSize = 10.5.sp,
                 fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
                 maxLines = 1
             )
@@ -364,6 +410,9 @@ private fun MainContentSection(
     }
 }
 
+/**
+ * 顶部状态栏：已根据要求去掉 TV Edition 徽章
+ */
 @Composable
 private fun TopStatusBar(activeTitle: String) {
     Row(
@@ -385,22 +434,9 @@ private fun TopStatusBar(activeTitle: String) {
             Text(
                 text = "TVFile",
                 color = Color.White,
-                fontSize = 14.sp,
+                fontSize = 15.sp,
                 fontWeight = FontWeight.Bold
             )
-            Spacer(modifier = Modifier.width(8.dp))
-            Surface(
-                shape = MaterialTheme.shapes.small,
-                color = TVAccentBlue.copy(alpha = 0.2f),
-                border = BorderStroke(1.dp, TVAccentCyan.copy(alpha = 0.3f))
-            ) {
-                Text(
-                    text = "TV Edition",
-                    color = TVAccentCyan,
-                    fontSize = 10.sp,
-                    modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
-                )
-            }
         }
 
         Row(
@@ -446,6 +482,13 @@ private fun Sidebar(
                 icon = Icons.Default.Dns,
                 isSelected = selectedTab == StorageType.SMB || selectedTab == StorageType.WEBDAV,
                 onClick = { onTabSelected(StorageType.SMB) }
+            )
+            SidebarTabItem(
+                title = "Web 传输",
+                subtitle = "HTTP: 45789",
+                icon = Icons.Default.CloudSync,
+                isSelected = selectedTab == StorageType.WEB_TRANSFER,
+                onClick = { onTabSelected(StorageType.WEB_TRANSFER) }
             )
         }
 

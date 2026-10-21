@@ -63,6 +63,24 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         }
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyMap())
 
+
+    // 10. Web 传输专属状态
+    private val _isHttpServerRunning = MutableStateFlow(false)
+    val isHttpServerRunning: StateFlow<Boolean> = _isHttpServerRunning.asStateFlow()
+
+    private val _webServerUrl = MutableStateFlow("")
+    val webServerUrl: StateFlow<String> = _webServerUrl.asStateFlow()
+
+    private val _receivedFiles = MutableStateFlow<List<TVFile>>(emptyList())
+    val receivedFiles: StateFlow<List<TVFile>> = _receivedFiles.asStateFlow()
+
+    private val _webFilterCategory = MutableStateFlow(FileCategory.ALL)
+    val webFilterCategory: StateFlow<FileCategory> = _webFilterCategory.asStateFlow()
+
+    val filteredReceivedFiles: StateFlow<List<TVFile>> = combine(_receivedFiles, _webFilterCategory) { files, cat ->
+        if (cat == FileCategory.ALL) files else files.filter { it.category == cat }
+    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+
 // 8. 播放与查看状态
     private val _activeVideoUrl = MutableStateFlow<Triple<TVFile, String, Long>?>(null)
     val activeVideoUrl: StateFlow<Triple<TVFile, String, Long>?> = _activeVideoUrl.asStateFlow()
@@ -103,6 +121,16 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                 storageType = StorageType.INTERNAL
             )
             loadFiles(repository.localProvider.rootPath, repository.localProvider)
+        } else if (tab == StorageType.WEB_TRANSFER) {
+            _level.value = 1
+            _currentDevice.value = null
+            _currentPath.value = "/tvfile"
+            _isHttpServerRunning.value = repository.isWebTransferRunning()
+            if (_isHttpServerRunning.value) {
+                val ip = com.tvfile.app.util.NetworkUtils.getLocalIpAddress()
+                _webServerUrl.value = "http://$ip:45789"
+            }
+            refreshReceivedFiles()
         } else {
             // 外接存储与网络存储默认进入第1层 (需求10: 无文件过滤)
             _level.value = 1
@@ -303,7 +331,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
 
     private suspend fun getProviderForDevice(device: StorageDevice): IStorageProvider? {
         return when (device.storageType) {
-            StorageType.INTERNAL -> repository.localProvider
+            StorageType.INTERNAL, StorageType.WEB_TRANSFER -> repository.localProvider
             StorageType.USB -> repository.getUsbProvider(device.path)
             StorageType.SMB, StorageType.WEBDAV -> {
                 val sid = device.serverId ?: return null
@@ -324,6 +352,50 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             return 0L
         }
         return entity.positionMs
+    }
+
+
+    fun toggleHttpServer() {
+        val currentlyRunning = repository.isWebTransferRunning()
+        if (currentlyRunning) {
+            repository.stopWebTransferServer()
+            _isHttpServerRunning.value = false
+            _webServerUrl.value = ""
+        } else {
+            val started = repository.startWebTransferServer {
+                refreshReceivedFiles()
+            }
+            if (started) {
+                _isHttpServerRunning.value = true
+                val ip = com.tvfile.app.util.NetworkUtils.getLocalIpAddress()
+                _webServerUrl.value = "http://$ip:45789"
+                refreshReceivedFiles()
+            }
+        }
+    }
+
+    fun refreshReceivedFiles() {
+        viewModelScope.launch {
+            _receivedFiles.value = repository.getReceivedFiles()
+        }
+    }
+
+    fun deleteReceivedFile(file: TVFile) {
+        viewModelScope.launch {
+            repository.deleteReceivedFile(file)
+            refreshReceivedFiles()
+        }
+    }
+
+    fun clearAllReceivedFiles() {
+        viewModelScope.launch {
+            repository.clearAllReceivedFiles()
+            refreshReceivedFiles()
+        }
+    }
+
+    fun setWebFilterCategory(category: FileCategory) {
+        _webFilterCategory.value = category
     }
 
 }

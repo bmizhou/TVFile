@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>TVFile Web 局域网传输中心</title>
+  <style>
+    :root {
+      --bg: #0B0F17; --card: #151D2C; --border: #23314A;
+      --cyan: #00F0FF; --blue: #0077FF; --green: #00E676; --red: #FF5252;
+      --text: #F0F6FC; --text-muted: #8B9BB4;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, sans-serif; }
+    body { background: var(--bg); color: var(--text); padding: 20px; }
+    .header { display: flex; justify-content: space-between; align-items: center; background: var(--card); border: 1px solid var(--border); border-radius: 14px; padding: 16px 20px; margin-bottom: 20px; flex-wrap: wrap; gap: 12px; }
+    .brand { display: flex; align-items: center; gap: 10px; font-size: 18px; font-weight: 700; color: var(--cyan); }
+    .status-pill { display: inline-flex; align-items: center; gap: 6px; color: var(--green); font-size: 12px; font-weight: 600; background: #00e67615; padding: 4px 10px; border-radius: 20px; border: 1px solid #00e67633; }
+    .grid { display: grid; grid-template-columns: 360px 1fr; gap: 20px; }
+    @media(max-width: 860px) { .grid { grid-template-columns: 1fr; } }
+    .dropzone { background: var(--card); border: 2px dashed #2A3C59; border-radius: 16px; padding: 40px 20px; text-align: center; cursor: pointer; position: relative; }
+    .dropzone:hover { border-color: var(--cyan); background: #182438; }
+    .file-input { position: absolute; inset: 0; opacity: 0; cursor: pointer; }
+    .panel { background: var(--card); border: 1px solid var(--border); border-radius: 16px; padding: 20px; display: flex; flex-direction: column; gap: 14px; }
+    .panel-header { display: flex; justify-content: space-between; align-items: center; }
+    .chips { display: flex; gap: 8px; flex-wrap: wrap; }
+    .chip { padding: 5px 12px; border-radius: 20px; background: #121927; border: 1px solid var(--border); color: var(--text-muted); font-size: 12px; cursor: pointer; }
+    .chip.active { background: #0077ff33; color: var(--cyan); border-color: var(--cyan); font-weight: 600; }
+    .file-row { display: flex; align-items: center; padding: 10px 14px; background: #101622; border: 1px solid #1E283D; border-radius: 10px; gap: 12px; font-size: 13px; }
+    .file-name { font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .btn-del { margin-left: auto; background: #331518; color: var(--red); border: 1px solid #ff525244; padding: 4px 10px; border-radius: 6px; cursor: pointer; font-size: 11px; }
+    .btn-del:hover { background: var(--red); color: #fff; }
+    .progress-box { display: none; background: #131E31; border: 1px solid var(--cyan); border-radius: 12px; padding: 12px; flex-direction: column; gap: 6px; margin-top: 14px; }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <div class="brand"><span>📡</span> TVFile Web 局域网传输中心</div>
+    <div class="status-pill">● 局域网直连电视 · tvfile/</div>
+  </div>
+
+  <div class="grid">
+    <div>
+      <div class="dropzone" id="dropzone">
+        <input type="file" id="filePicker" class="file-input" multiple onchange="uploadFiles(this.files)">
+        <div style="font-size:36px;margin-bottom:10px;">📤</div>
+        <div style="font-size:15px;font-weight:700;">点击或拖拽文件上传至电视</div>
+        <div style="font-size:12px;color:var(--text-muted);margin-top:6px;">支持 APK、4K 视频、无损音乐及图片</div>
+      </div>
+      <div class="progress-box" id="progressBox">
+        <div style="display:flex;justify-content:space-between;font-size:12px;">
+          <span id="progName">上传中...</span>
+          <span id="progPercent" style="color:var(--cyan);font-weight:700;">0%</span>
+        </div>
+        <div style="height:6px;background:#202B3D;border-radius:3px;overflow:hidden;">
+          <div id="progBar" style="height:100%;width:0%;background:var(--cyan);transition:width 0.2s;"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-header">
+        <div style="font-size:15px;font-weight:700;">📂 已接收文件列表 (<span id="totalCount">0</span>)</div>
+        <button class="chip" onclick="loadFiles()">🔄 刷新列表</button>
+      </div>
+
+      <div class="chips">
+        <div class="chip active" data-type="all" onclick="setFilter('all')">全部</div>
+        <div class="chip" data-type="apk" onclick="setFilter('apk')">📦 安装包</div>
+        <div class="chip" data-type="video" onclick="setFilter('video')">🎬 视频</div>
+        <div class="chip" data-type="audio" onclick="setFilter('audio')">🎵 音乐</div>
+        <div class="chip" data-type="image" onclick="setFilter('image')">🖼️ 图片</div>
+      </div>
+
+      <div id="fileList" style="display:flex;flex-direction:column;gap:8px;max-height:480px;overflow-y:auto;">
+        <!-- 动态注入 -->
+      </div>
+    </div>
+  </div>
+
+  <script>
+    let filesData = [];
+    let curFilter = 'all';
+
+    function formatSize(bytes) {
+      if (!bytes || bytes <= 0) return '0 B';
+      const k = 1024, sizes = ['B', 'KB', 'MB', 'GB'];
+      const i = Math.floor(Math.log(bytes) / Math.log(k));
+      return (bytes / Math.pow(k, i)).toFixed(1) + ' ' + sizes[i];
+    }
+
+    function loadFiles() {
+      fetch('/api/files').then(r => r.json()).then(data => {
+        filesData = data;
+        render();
+      }).catch(e => console.error(e));
+    }
+
+    function render() {
+      const listEl = document.getElementById('fileList');
+      listEl.innerHTML = '';
+      const filtered = filesData.filter(f => curFilter === 'all' || f.type === curFilter);
+      document.getElementById('totalCount').innerText = filesData.length;
+
+      if (filtered.length === 0) {
+        listEl.innerHTML = '<div style="text-align:center;padding:30px;color:var(--text-muted);font-size:12px;">暂无文件</div>';
+        return;
+      }
+
+      filtered.forEach(f => {
+        const row = document.createElement('div');
+        row.className = 'file-row';
+        let icon = '📄';
+        if (f.type === 'apk') icon = '🤖';
+        if (f.type === 'video') icon = '🎬';
+        if (f.type === 'audio') icon = '🎵';
+        if (f.type === 'image') icon = '🖼️';
+
+        row.innerHTML = 
+          '<span style="font-size:20px;">' + icon + '</span>' +
+          '<div style="flex:1;min-width:0;">' +
+            '<div class="file-name" title="' + f.name + '">' + f.name + '</div>' +
+            '<div style="font-size:11px;color:var(--text-muted);margin-top:2px;">' + formatSize(f.size) + '</div>' +
+          '</div>' +
+          '<button class="btn-del" onclick="deleteFile(\'' + encodeURIComponent(f.name) + '\')">🗑️ 删除</button>';
+        listEl.appendChild(row);
+      });
+    }
+
+    function setFilter(type) {
+      curFilter = type;
+      document.querySelectorAll('.chip').forEach(c => {
+        c.classList.toggle('active', c.getAttribute('data-type') === type);
+      });
+      render();
+    }
+
+    function deleteFile(encodedName) {
+      const name = decodeURIComponent(encodedName);
+      if (confirm('确认从电视删除该文件？\n' + name)) {
+        fetch('/api/delete?name=' + encodedName, { method: 'POST' }).then(r => r.json()).then(res => {
+          loadFiles();
+        });
+      }
+    }
+
+    function uploadFiles(files) {
+      if (!files || files.length === 0) return;
+      const file = files[0];
+      const formData = new FormData();
+      formData.append('file', file);
+
+      const box = document.getElementById('progressBox');
+      const progName = document.getElementById('progName');
+      const progBar = document.getElementById('progBar');
+      const progPercent = document.getElementById('progPercent');
+
+      progName.innerText = '正在上传: ' + file.name;
+      box.style.display = 'flex';
+      progBar.style.width = '0%';
+      progPercent.innerText = '0%';
+
+      const xhr = new XMLHttpRequest();
+      xhr.open('POST', '/api/upload', true);
+
+      xhr.upload.onprogress = function(e) {
+        if (e.lengthComputable) {
+          const p = Math.round((e.loaded / e.total) * 100);
+          progBar.style.width = p + '%';
+          progPercent.innerText = p + '%';
+        }
+      };
+
+      xhr.onload = function() {
+        box.style.display = 'none';
+        loadFiles();
+      };
+
+      xhr.send(formData);
+    }
+
+    loadFiles();
+  </script>
+</body>
+</html>

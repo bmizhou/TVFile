@@ -102,4 +102,72 @@ class StorageRepository(private val context: Context) {
         return playbackProgressDao.getAllProgressFlow()
     }
 
+
+    private var webTransferServer: com.tvfile.app.data.streamer.WebTransferServer? = null
+    var onWebFilesChangedListener: (() -> Unit)? = null
+
+    val tvFileFolder: java.io.File
+        get() {
+            val root = android.os.Environment.getExternalStorageDirectory()
+            val folder = java.io.File(root, "tvfile")
+            if (!folder.exists()) folder.mkdirs()
+            return folder
+        }
+
+    fun isWebTransferRunning(): Boolean {
+        return webTransferServer?.isAlive ?: false
+    }
+
+    fun startWebTransferServer(onChanged: () -> Unit): Boolean {
+        onWebFilesChangedListener = onChanged
+        return try {
+            if (webTransferServer == null || !webTransferServer!!.isAlive) {
+                webTransferServer = com.tvfile.app.data.streamer.WebTransferServer(context, 45789) {
+                    onWebFilesChangedListener?.invoke()
+                }
+                webTransferServer?.start()
+            }
+            true
+        } catch (_: Exception) {
+            false
+        }
+    }
+
+    fun stopWebTransferServer() {
+        try {
+            webTransferServer?.stop()
+            webTransferServer = null
+        } catch (_: Exception) {}
+    }
+
+    fun getReceivedFiles(): List<com.tvfile.app.data.model.TVFile> {
+        val files = tvFileFolder.listFiles() ?: emptyArray()
+        return files.filter { it.isFile }.map { f ->
+            com.tvfile.app.data.model.TVFile(
+                id = f.absolutePath,
+                name = f.name,
+                path = f.absolutePath,
+                size = f.length(),
+                lastModified = f.lastModified(),
+                isDirectory = false,
+                mimeType = com.tvfile.app.util.MimeUtils.getMimeType(f.name),
+                category = com.tvfile.app.util.MimeUtils.getCategory(f.name, false),
+                storageType = com.tvfile.app.data.model.StorageType.INTERNAL
+            )
+        }.sortedByDescending { it.lastModified }
+    }
+
+    fun deleteReceivedFile(file: com.tvfile.app.data.model.TVFile): Boolean {
+        val target = java.io.File(file.path)
+        return if (target.exists()) target.delete() else false
+    }
+
+    fun clearAllReceivedFiles(): Boolean {
+        val files = tvFileFolder.listFiles() ?: return true
+        for (f in files) {
+            if (f.isFile) f.delete()
+        }
+        return true
+    }
+
 }
