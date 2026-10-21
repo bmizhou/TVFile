@@ -9,6 +9,7 @@ import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.InsertDriveFile
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
@@ -41,20 +42,21 @@ fun FileBrowserScreen(
             contentAlignment = Alignment.Center
         ) {
             Text(
-                text = "当前目录下无匹配文件",
+                text = "当前目录下无文件",
                 color = TVTextMuted,
-                fontSize = 14.sp
+                fontSize = 16.sp
             )
         }
         return
     }
 
     if (viewMode == ViewMode.GRID) {
+        // 固定 5 列排版，保证大屏远视距下图标巨大、文字清晰
         LazyVerticalGrid(
-            columns = GridCells.Adaptive(minSize = 130.dp),
+            columns = GridCells.Fixed(5),
             contentPadding = PaddingValues(16.dp),
-            horizontalArrangement = Arrangement.spacedBy(12.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp),
+            horizontalArrangement = Arrangement.spacedBy(16.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp),
             modifier = modifier.fillMaxSize()
         ) {
             items(files, key = { it.id }) { file ->
@@ -70,7 +72,7 @@ fun FileBrowserScreen(
     } else {
         LazyColumn(
             contentPadding = PaddingValues(16.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp),
+            verticalArrangement = Arrangement.spacedBy(10.dp),
             modifier = modifier.fillMaxSize()
         ) {
             items(files, key = { it.id }) { file ->
@@ -98,26 +100,27 @@ private fun FileGridCard(
     TVCard(
         onClick = onClick,
         onLongClick = onLongClick,
+        shape = RoundedCornerShape(16.dp),
         modifier = Modifier.fillMaxWidth()
     ) {
         Column(
             modifier = Modifier
-                .padding(12.dp)
+                .padding(16.dp)
                 .fillMaxWidth(),
             horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(6.dp)
+            verticalArrangement = Arrangement.spacedBy(10.dp)
         ) {
             Surface(
-                shape = MaterialTheme.shapes.small,
+                shape = RoundedCornerShape(14.dp),
                 color = TVSurface,
-                modifier = Modifier.size(54.dp)
+                modifier = Modifier.size(76.dp)
             ) {
                 Box(contentAlignment = Alignment.Center) {
                     Icon(
                         imageVector = icon,
                         contentDescription = null,
                         tint = iconColor,
-                        modifier = Modifier.size(32.dp)
+                        modifier = Modifier.size(46.dp)
                     )
                 }
             }
@@ -125,8 +128,8 @@ private fun FileGridCard(
             Text(
                 text = file.name,
                 color = TVTextPrimary,
-                fontSize = 12.sp,
-                fontWeight = FontWeight.Medium,
+                fontSize = 15.sp,
+                fontWeight = FontWeight.Bold,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis
             )
@@ -134,7 +137,7 @@ private fun FileGridCard(
             Text(
                 text = file.formattedSize,
                 color = TVTextSecondary,
-                fontSize = 10.sp
+                fontSize = 13.sp
             )
 
             // 视频断点记忆播放进度条指示
@@ -143,7 +146,7 @@ private fun FileGridCard(
                     progress = { playbackProgress },
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(3.dp),
+                        .height(4.dp),
                     color = TVAccentCyan,
                     trackColor = TVBorder
                 )
@@ -164,11 +167,12 @@ private fun FileListRow(
     TVCard(
         onClick = onClick,
         onLongClick = onLongClick,
+        shape = RoundedCornerShape(12.dp),
         modifier = Modifier.fillMaxWidth()
     ) {
         Row(
             modifier = Modifier
-                .padding(horizontal = 16.dp, vertical = 10.dp)
+                .padding(horizontal = 20.dp, vertical = 14.dp)
                 .fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically
         ) {
@@ -176,15 +180,15 @@ private fun FileListRow(
                 imageVector = icon,
                 contentDescription = null,
                 tint = iconColor,
-                modifier = Modifier.size(26.dp)
+                modifier = Modifier.size(34.dp)
             )
-            Spacer(modifier = Modifier.width(14.dp))
+            Spacer(modifier = Modifier.width(18.dp))
             Column(modifier = Modifier.weight(2f)) {
                 Text(
                     text = file.name,
                     color = TVTextPrimary,
-                    fontSize = 13.sp,
-                    fontWeight = FontWeight.Medium,
+                    fontSize = 16.sp,
+                    fontWeight = FontWeight.Bold,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis
                 )
@@ -193,20 +197,21 @@ private fun FileListRow(
                     Text(
                         text = "已播放 $percent%",
                         color = TVAccentCyan,
-                        fontSize = 10.sp
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.SemiBold
                     )
                 }
             }
             Text(
                 text = file.formattedSize,
                 color = TVTextSecondary,
-                fontSize = 11.sp,
+                fontSize = 14.sp,
                 modifier = Modifier.weight(1f)
             )
             Text(
                 text = if (file.isDirectory) "进入 ❯" else "打开 ❯",
                 color = TVAccentCyan,
-                fontSize = 11.sp,
+                fontSize = 14.sp,
                 fontWeight = FontWeight.Bold
             )
         }
@@ -223,7 +228,7 @@ private fun getFileVisuals(file: TVFile): Pair<ImageVector, Color> {
             FileCategory.IMAGE -> Pair(Icons.Default.Image, Color(0xFF18FFFF))
             FileCategory.APK -> Pair(Icons.Default.Android, TVAccentGreen)
             FileCategory.DOCUMENT -> Pair(Icons.Default.Description, TVAccentBlue)
-            else -> Pair(Icons.Default.InsertDriveFile, TVTextSecondary)
+            else -> Pair(Icons.AutoMirrored.Filled.InsertDriveFile, TVTextSecondary)
         }
     }
 }

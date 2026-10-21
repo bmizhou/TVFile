@@ -30,6 +30,8 @@ fun TVCard(
     unfocusedBorderColor: Color = TVBorder,
     focusedBorderWidth: Dp = 2.5.dp,
     unfocusedBorderWidth: Dp = 1.dp,
+    focusedBackgroundColor: Color = TVCardHover,
+    unfocusedBackgroundColor: Color = TVCardBg,
     content: @Composable ColumnScope.() -> Unit
 ) {
     val interactionSource = remember { MutableInteractionSource() }
@@ -51,7 +53,7 @@ fun TVCard(
                 onLongClick = onLongClick
             ),
         shape = shape,
-        color = if (isFocused) TVCardHover else TVCardBg,
+        color = if (isFocused) focusedBackgroundColor else unfocusedBackgroundColor,
         border = BorderStroke(
             width = if (isFocused) focusedBorderWidth else unfocusedBorderWidth,
             color = if (isFocused) focusedBorderColor else unfocusedBorderColor

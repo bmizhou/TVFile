@@ -1,10 +1,13 @@
 package com.tvfile.app.presentation.screen
 
+import android.app.Activity
 import android.content.res.Configuration
+import android.widget.Toast
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ViewList
 import androidx.compose.material.icons.filled.*
@@ -15,10 +18,14 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.window.Dialog
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.tvfile.app.data.model.FileCategory
+import com.tvfile.app.data.model.SortMode
 import com.tvfile.app.data.model.StorageType
 import com.tvfile.app.data.model.ViewMode
 import com.tvfile.app.presentation.component.*
@@ -29,6 +36,7 @@ import com.tvfile.app.presentation.viewmodel.MainViewModel
 fun MainScreen(
     viewModel: MainViewModel = viewModel()
 ) {
+    val context = LocalContext.current
     val configuration = LocalConfiguration.current
     val isPortrait = configuration.orientation == Configuration.ORIENTATION_PORTRAIT
 
@@ -37,6 +45,7 @@ fun MainScreen(
     val currentDevice by viewModel.currentDevice.collectAsState()
     val currentPath by viewModel.currentPath.collectAsState()
     val filterCategory by viewModel.filterCategory.collectAsState()
+    val sortMode by viewModel.sortMode.collectAsState()
     val viewMode by viewModel.viewMode.collectAsState()
     val files by viewModel.fileList.collectAsState()
     val usbDevices by viewModel.usbDevices.collectAsState()
@@ -50,20 +59,33 @@ fun MainScreen(
     val filteredReceivedFiles by viewModel.filteredReceivedFiles.collectAsState()
     val webFilterCategory by viewModel.webFilterCategory.collectAsState()
 
+    // 播放与弹窗状态
     val activeVideoUrl by viewModel.activeVideoUrl.collectAsState()
     val activeAudioUrl by viewModel.activeAudioUrl.collectAsState()
     val activeImageFile by viewModel.activeImageFile.collectAsState()
+    val apkDownloadProgress by viewModel.apkDownloadProgress.collectAsState()
+    val downloadingApkFile by viewModel.downloadingApkFile.collectAsState()
     val isMenuOpen by viewModel.isMenuOpen.collectAsState()
     val selectedFile by viewModel.selectedFile.collectAsState()
     val isAddServerDialogOpen by viewModel.isAddServerDialogOpen.collectAsState()
     val clipboard by viewModel.fileOperationManager.clipboard.collectAsState()
     val activeTask by viewModel.fileOperationManager.activeTask.collectAsState()
 
-    // 遥控器返回键处理
+    // 排序选择弹窗控制
+    var isSortDialogOpen by remember { mutableStateOf(false) }
+
+    // 【解决问题 9】：主页按返回键防误触双击退出
+    var lastBackPressTime by remember { mutableLongStateOf(0L) }
     BackHandler {
         val handled = viewModel.navigateBack()
         if (!handled) {
-            // 已在最外层，退出应用由系统处理
+            val now = System.currentTimeMillis()
+            if (now - lastBackPressTime < 2000L) {
+                (context as? Activity)?.finish()
+            } else {
+                lastBackPressTime = now
+                Toast.makeText(context, "再按一次返回键退出 TVFile", Toast.LENGTH_SHORT).show()
+            }
         }
     }
 
@@ -73,13 +95,13 @@ fun MainScreen(
             .background(TVBackground)
     ) {
         Column(modifier = Modifier.fillMaxSize()) {
-            // 1. 顶部状态栏 (已去掉 TV Edition)
+            // 顶部状态栏 (无 TV Edition 标签)
             TopStatusBar(
                 activeTitle = currentDevice?.name ?: currentTab.displayName
             )
 
             if (isPortrait) {
-                // 【竖屏模式】：左侧 Tab 栏移动到顶部，只保留图标+图标文字，文字在图标下方
+                // 竖屏顶部 Tab 栏
                 PortraitTopTabBar(
                     selectedTab = currentTab,
                     onTabSelected = { tab -> viewModel.selectTab(tab) },
@@ -88,7 +110,6 @@ fun MainScreen(
                         .padding(horizontal = 16.dp, vertical = 6.dp)
                 )
 
-                // 竖屏下方主工作区
                 Column(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -116,6 +137,7 @@ fun MainScreen(
                             currentPath = currentPath,
                             viewMode = viewMode,
                             filterCategory = filterCategory,
+                            sortMode = sortMode,
                             files = files,
                             usbDevices = usbDevices,
                             servers = servers,
@@ -123,6 +145,7 @@ fun MainScreen(
                             canPaste = clipboard != null && clipboard!!.files.isNotEmpty(),
                             onRootClick = { viewModel.selectTab(currentTab) },
                             onToggleView = { viewModel.toggleViewMode() },
+                            onOpenSortDialog = { isSortDialogOpen = true },
                             onPaste = { viewModel.pasteToCurrent() },
                             onCategorySelected = { cat -> viewModel.setFilterCategory(cat) },
                             onDeviceClick = { dev -> viewModel.enterDevice(dev) },
@@ -133,13 +156,13 @@ fun MainScreen(
                     }
                 }
             } else {
-                // 【横屏模式】：维持原左侧 Tab 栏 + 右侧内容区双栏布局
+                // 横屏经典双栏布局
                 Row(modifier = Modifier.fillMaxSize()) {
                     Sidebar(
                         selectedTab = currentTab,
                         onTabSelected = { tab -> viewModel.selectTab(tab) },
                         modifier = Modifier
-                            .width(220.dp)
+                            .width(240.dp)
                             .fillMaxHeight()
                     )
 
@@ -170,6 +193,7 @@ fun MainScreen(
                                 currentPath = currentPath,
                                 viewMode = viewMode,
                                 filterCategory = filterCategory,
+                                sortMode = sortMode,
                                 files = files,
                                 usbDevices = usbDevices,
                                 servers = servers,
@@ -177,6 +201,7 @@ fun MainScreen(
                                 canPaste = clipboard != null && clipboard!!.files.isNotEmpty(),
                                 onRootClick = { viewModel.selectTab(currentTab) },
                                 onToggleView = { viewModel.toggleViewMode() },
+                                onOpenSortDialog = { isSortDialogOpen = true },
                                 onPaste = { viewModel.pasteToCurrent() },
                                 onCategorySelected = { cat -> viewModel.setFilterCategory(cat) },
                                 onDeviceClick = { dev -> viewModel.enterDevice(dev) },
@@ -190,7 +215,7 @@ fun MainScreen(
             }
         }
 
-        // 3. 悬浮浮窗与弹窗
+        // 操作抽屉 (解决问题 7: 自动聚焦首选项)
         if (isMenuOpen) {
             Box(
                 modifier = Modifier
@@ -212,13 +237,34 @@ fun MainScreen(
             }
         }
 
+        // 排序选择弹窗 (解决问题 8)
+        if (isSortDialogOpen) {
+            SortSelectionDialog(
+                currentSortMode = sortMode,
+                onSelectSort = { mode ->
+                    viewModel.setSortMode(mode)
+                    isSortDialogOpen = false
+                },
+                onDismiss = { isSortDialogOpen = false }
+            )
+        }
+
+        // 【解决问题 10】：远程 APK 下载进度弹窗
+        if (apkDownloadProgress != null && downloadingApkFile != null) {
+            ApkDownloadDialog(
+                file = downloadingApkFile!!,
+                progress = apkDownloadProgress!!,
+                onCancel = { viewModel.cancelApkDownload() }
+            )
+        }
+
         // 后台传输进度浮层
         TransferProgressBar(
             task = activeTask,
             modifier = Modifier.align(Alignment.BottomEnd)
         )
 
-        // 视频播放全屏覆盖层 (支持断点记忆续播)
+        // 视频播放全屏覆盖层
         if (activeVideoUrl != null) {
             VideoPlayerOverlay(
                 file = activeVideoUrl!!.first,
@@ -248,7 +294,7 @@ fun MainScreen(
             )
         }
 
-        // 添加服务器弹窗
+        // 添加服务器弹窗 (解决问题 4: 默认路径 /, 全遥控器焦点适配)
         if (isAddServerDialogOpen) {
             AddServerDialog(
                 onDismiss = { viewModel.setAddServerDialogOpen(false) },
@@ -259,8 +305,80 @@ fun MainScreen(
 }
 
 /**
+ * 排序选择弹窗组件
+ */
+@Composable
+private fun SortSelectionDialog(
+    currentSortMode: SortMode,
+    onSelectSort: (SortMode) -> Unit,
+    onDismiss: () -> Unit
+) {
+    Dialog(onDismissRequest = onDismiss) {
+        Surface(
+            shape = RoundedCornerShape(20.dp),
+            color = TVSurface,
+            border = BorderStroke(2.dp, TVAccentCyan.copy(alpha = 0.8f)),
+            shadowElevation = 24.dp,
+            modifier = Modifier.width(380.dp)
+        ) {
+            Column(
+                modifier = Modifier.padding(20.dp),
+                verticalArrangement = Arrangement.spacedBy(10.dp)
+            ) {
+                Text(
+                    text = "🔀 选择文件排序方式",
+                    color = Color.White,
+                    fontSize = 17.sp,
+                    fontWeight = FontWeight.Bold,
+                    modifier = Modifier.padding(bottom = 6.dp)
+                )
+
+                SortMode.values().forEach { mode ->
+                    val isSelected = currentSortMode == mode
+                    TVButton(
+                        onClick = { onSelectSort(mode) },
+                        focusedBackgroundColor = TVAccentBlue,
+                        unfocusedBackgroundColor = if (isSelected) Color(0xFF132845) else Color.Transparent,
+                        focusedBorderColor = TVAccentCyan,
+                        unfocusedBorderColor = if (isSelected) TVAccentCyan.copy(alpha = 0.6f) else Color.Transparent,
+                        modifier = Modifier.fillMaxWidth(),
+                        contentPadding = PaddingValues(horizontal = 14.dp, vertical = 10.dp)
+                    ) { isFocused ->
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(
+                                text = mode.displayName,
+                                color = if (isSelected || isFocused) Color.White else TVTextSecondary,
+                                fontSize = 14.sp,
+                                fontWeight = if (isSelected || isFocused) FontWeight.Bold else FontWeight.Medium
+                            )
+                            if (isSelected) {
+                                Text("✔", color = TVAccentCyan, fontWeight = FontWeight.Bold, fontSize = 14.sp)
+                            }
+                        }
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(6.dp))
+                TVButton(
+                    onClick = onDismiss,
+                    focusedBackgroundColor = Color(0xFF28364F),
+                    unfocusedBackgroundColor = TVCardBg,
+                    modifier = Modifier.fillMaxWidth(),
+                    contentPadding = PaddingValues(vertical = 8.dp)
+                ) {
+                    Text("取消 (BACK)", color = TVTextSecondary, fontSize = 13.sp)
+                }
+            }
+        }
+    }
+}
+
+/**
  * 竖屏模式专属：顶部 Tab 栏
- * 只保留图标 + 图标文字，文字在图标正下方
  */
 @Composable
 private fun PortraitTopTabBar(
@@ -319,7 +437,7 @@ private fun PortraitTabItem(
     ) {
         Column(
             modifier = Modifier
-                .padding(vertical = 8.dp, horizontal = 2.dp)
+                .padding(vertical = 10.dp, horizontal = 2.dp)
                 .fillMaxWidth(),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center
@@ -328,13 +446,13 @@ private fun PortraitTabItem(
                 imageVector = icon,
                 contentDescription = null,
                 tint = if (isSelected) TVAccentCyan else TVTextSecondary,
-                modifier = Modifier.size(22.dp)
+                modifier = Modifier.size(24.dp)
             )
             Spacer(modifier = Modifier.height(4.dp))
             Text(
                 text = title,
                 color = if (isSelected) Color.White else TVTextPrimary,
-                fontSize = 10.5.sp,
+                fontSize = 11.5.sp,
                 fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
                 maxLines = 1
             )
@@ -349,7 +467,8 @@ private fun MainContentSection(
     currentDeviceName: String,
     currentPath: String,
     viewMode: ViewMode,
-    filterCategory: com.tvfile.app.data.model.FileCategory,
+    filterCategory: FileCategory,
+    sortMode: SortMode,
     files: List<com.tvfile.app.data.model.TVFile>,
     usbDevices: List<com.tvfile.app.data.model.StorageDevice>,
     servers: List<com.tvfile.app.data.database.ServerEntity>,
@@ -357,26 +476,29 @@ private fun MainContentSection(
     canPaste: Boolean,
     onRootClick: () -> Unit,
     onToggleView: () -> Unit,
+    onOpenSortDialog: () -> Unit,
     onPaste: () -> Unit,
-    onCategorySelected: (com.tvfile.app.data.model.FileCategory) -> Unit,
+    onCategorySelected: (FileCategory) -> Unit,
     onDeviceClick: (com.tvfile.app.data.model.StorageDevice) -> Unit,
     onAddServerClick: () -> Unit,
     onFileClick: (com.tvfile.app.data.model.TVFile) -> Unit,
     onFileLongClick: (com.tvfile.app.data.model.TVFile) -> Unit
 ) {
     Column(modifier = Modifier.fillMaxSize()) {
-        // 顶部控制条 (面包屑 + 视图切换 + 粘贴)
+        // 顶部控制条 (解决问题 2: TVButton 带清晰发光描边; 解决问题 8: 排序切换)
         HeaderToolbar(
             rootName = currentDeviceName,
             currentPath = currentPath,
             viewMode = viewMode,
+            sortMode = sortMode,
             canPaste = canPaste,
             onRootClick = onRootClick,
             onToggleView = onToggleView,
+            onOpenSortDialog = onOpenSortDialog,
             onPaste = onPaste
         )
 
-        // 【严格对标需求10】：仅在第2层(具体目录层)时展示文件类型过滤 Chip
+        // 仅在第2层(具体目录层)时展示文件类型过滤 Chip
         if (level == 2) {
             FilterBar(
                 selectedCategory = filterCategory,
@@ -385,10 +507,9 @@ private fun MainContentSection(
             )
         }
 
-        // 主视口切换
         Box(modifier = Modifier.weight(1f)) {
             if (level == 1) {
-                // 第1层：设备/服务器列表 (无过滤)
+                // 第1层：设备/服务器列表 (解决问题 3: 空列表时大号添加引导卡片)
                 DeviceListScreen(
                     currentTab = currentTab,
                     usbDevices = usbDevices,
@@ -397,7 +518,7 @@ private fun MainContentSection(
                     onAddServerClick = onAddServerClick
                 )
             } else {
-                // 第2层：具体目录文件浏览 (带过滤 + 网格/列表)
+                // 第2层：具体目录文件浏览 (解决问题 1: 固定 5 列排版，大图标大字体)
                 FileBrowserScreen(
                     files = files,
                     viewMode = viewMode,
@@ -411,44 +532,47 @@ private fun MainContentSection(
 }
 
 /**
- * 顶部状态栏：已根据要求去掉 TV Edition 徽章
+ * 顶部状态栏：无 TV Edition 标签
  */
 @Composable
 private fun TopStatusBar(activeTitle: String) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .height(44.dp)
+            .height(46.dp)
             .background(TVSurface)
-            .padding(horizontal = 20.dp),
+            .padding(horizontal = 22.dp),
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Box(
                 modifier = Modifier
-                    .size(8.dp)
+                    .size(9.dp)
                     .background(TVAccentCyan, shape = MaterialTheme.shapes.extraSmall)
             )
-            Spacer(modifier = Modifier.width(8.dp))
+            Spacer(modifier = Modifier.width(10.dp))
             Text(
                 text = "TVFile",
                 color = Color.White,
-                fontSize = 15.sp,
+                fontSize = 17.sp,
                 fontWeight = FontWeight.Bold
             )
         }
 
         Row(
             verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(16.dp)
+            horizontalArrangement = Arrangement.spacedBy(18.dp)
         ) {
-            Text(text = "当前: $activeTitle", color = TVTextSecondary, fontSize = 12.sp)
-            Text(text = "📶 局域网在线", color = TVTextMuted, fontSize = 12.sp)
+            Text(text = "当前: $activeTitle", color = TVTextSecondary, fontSize = 13.5.sp)
+            Text(text = "📶 局域网在线", color = TVTextMuted, fontSize = 13.5.sp)
         }
     }
 }
 
+/**
+ * 左侧侧边栏：【解决问题 1】：字体大幅放大，图标放大，3米大屏视距清晰可见
+ */
 @Composable
 private fun Sidebar(
     selectedTab: StorageType,
@@ -458,10 +582,10 @@ private fun Sidebar(
     Column(
         modifier = modifier
             .background(Color(0xFF0D121C))
-            .padding(16.dp),
+            .padding(18.dp),
         verticalArrangement = Arrangement.SpaceBetween
     ) {
-        Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+        Column(verticalArrangement = Arrangement.spacedBy(14.dp)) {
             SidebarTabItem(
                 title = "内部存储",
                 subtitle = "本地闪存",
@@ -493,19 +617,19 @@ private fun Sidebar(
         }
 
         Surface(
-            shape = MaterialTheme.shapes.small,
+            shape = RoundedCornerShape(12.dp),
             color = TVCardBg,
             border = BorderStroke(1.dp, TVBorder),
             modifier = Modifier.fillMaxWidth()
         ) {
             Column(
-                modifier = Modifier.padding(10.dp),
-                verticalArrangement = Arrangement.spacedBy(4.dp)
+                modifier = Modifier.padding(12.dp),
+                verticalArrangement = Arrangement.spacedBy(6.dp)
             ) {
-                Text(text = "遥控器快捷提示", color = TVTextPrimary, fontSize = 11.sp, fontWeight = FontWeight.Bold)
-                Text(text = "OK: 打开 / 进入", color = TVTextSecondary, fontSize = 10.sp)
-                Text(text = "MENU: 文件操作抽屉", color = TVTextSecondary, fontSize = 10.sp)
-                Text(text = "BACK: 返回上一级", color = TVTextSecondary, fontSize = 10.sp)
+                Text(text = "遥控器快捷提示", color = TVTextPrimary, fontSize = 12.5.sp, fontWeight = FontWeight.Bold)
+                Text(text = "OK: 打开 / 进入", color = TVTextSecondary, fontSize = 11.5.sp)
+                Text(text = "MENU: 文件操作抽屉", color = TVTextSecondary, fontSize = 11.5.sp)
+                Text(text = "BACK: 返回上一级", color = TVTextSecondary, fontSize = 11.5.sp)
             }
         }
     }
@@ -521,13 +645,16 @@ private fun SidebarTabItem(
 ) {
     TVCard(
         onClick = onClick,
+        shape = RoundedCornerShape(14.dp),
         focusedBorderColor = TVAccentCyan,
-        unfocusedBorderColor = if (isSelected) TVAccentCyan.copy(alpha = 0.5f) else Color.Transparent,
+        unfocusedBorderColor = if (isSelected) TVAccentCyan.copy(alpha = 0.6f) else Color.Transparent,
+        focusedBackgroundColor = Color(0xFF1B2F4C),
+        unfocusedBackgroundColor = if (isSelected) Color(0xFF131D2D) else Color.Transparent,
         modifier = Modifier.fillMaxWidth()
     ) {
         Row(
             modifier = Modifier
-                .padding(12.dp)
+                .padding(horizontal = 14.dp, vertical = 14.dp)
                 .fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically
         ) {
@@ -535,36 +662,41 @@ private fun SidebarTabItem(
                 imageVector = icon,
                 contentDescription = null,
                 tint = if (isSelected) TVAccentCyan else TVTextSecondary,
-                modifier = Modifier.size(24.dp)
+                modifier = Modifier.size(30.dp)
             )
-            Spacer(modifier = Modifier.width(12.dp))
+            Spacer(modifier = Modifier.width(14.dp))
             Column {
                 Text(
                     text = title,
                     color = if (isSelected) Color.White else TVTextPrimary,
-                    fontSize = 13.sp,
-                    fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium
+                    fontSize = 16.5.sp,
+                    fontWeight = if (isSelected) FontWeight.Bold else FontWeight.SemiBold
                 )
-                Text(text = subtitle, color = TVTextMuted, fontSize = 10.sp)
+                Text(text = subtitle, color = TVTextMuted, fontSize = 12.sp)
             }
         }
     }
 }
 
+/**
+ * 顶部工具栏：【解决问题 2】：全部换用 TVButton，带青蓝高亮边框；【解决问题 8】：增加排序按钮
+ */
 @Composable
 private fun HeaderToolbar(
     rootName: String,
     currentPath: String,
     viewMode: ViewMode,
+    sortMode: SortMode,
     canPaste: Boolean,
     onRootClick: () -> Unit,
     onToggleView: () -> Unit,
+    onOpenSortDialog: () -> Unit,
     onPaste: () -> Unit
 ) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = 20.dp, vertical = 8.dp),
+            .padding(horizontal = 20.dp, vertical = 10.dp),
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically
     ) {
@@ -575,33 +707,62 @@ private fun HeaderToolbar(
             modifier = Modifier.weight(1f)
         )
 
-        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            Button(
+        Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+            // 排序按钮 (解决问题 8)
+            TVButton(
+                onClick = onOpenSortDialog,
+                focusedBackgroundColor = TVAccentBlue,
+                unfocusedBackgroundColor = TVCardBg,
+                contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp)
+            ) { isFocused ->
+                Icon(
+                    imageVector = Icons.Default.Sort,
+                    contentDescription = null,
+                    tint = if (isFocused) Color.White else TVAccentCyan,
+                    modifier = Modifier.size(16.dp)
+                )
+                Spacer(modifier = Modifier.width(6.dp))
+                Text(
+                    text = sortMode.displayName.substringBefore(" ("),
+                    color = if (isFocused) Color.White else TVTextPrimary,
+                    fontSize = 12.sp,
+                    fontWeight = FontWeight.SemiBold
+                )
+            }
+
+            // 视图切换按钮 (解决问题 2: TVButton 带清晰焦点发光描边)
+            TVButton(
                 onClick = onToggleView,
-                colors = ButtonDefaults.buttonColors(containerColor = TVCardBg)
-            ) {
+                focusedBackgroundColor = TVAccentBlue,
+                unfocusedBackgroundColor = TVCardBg,
+                contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp)
+            ) { isFocused ->
                 Icon(
                     imageVector = if (viewMode == ViewMode.GRID) Icons.AutoMirrored.Filled.ViewList else Icons.Default.GridView,
                     contentDescription = null,
-                    tint = TVAccentCyan,
+                    tint = if (isFocused) Color.White else TVAccentCyan,
                     modifier = Modifier.size(16.dp)
                 )
                 Spacer(modifier = Modifier.width(6.dp))
                 Text(
                     text = if (viewMode == ViewMode.GRID) "列表" else "网格",
-                    color = TVTextPrimary,
-                    fontSize = 11.sp
+                    color = if (isFocused) Color.White else TVTextPrimary,
+                    fontSize = 12.sp,
+                    fontWeight = FontWeight.SemiBold
                 )
             }
 
             if (canPaste) {
-                Button(
+                TVButton(
                     onClick = onPaste,
-                    colors = ButtonDefaults.buttonColors(containerColor = TVAccentGreen)
+                    focusedBackgroundColor = TVAccentGreen,
+                    unfocusedBackgroundColor = TVAccentGreen.copy(alpha = 0.8f),
+                    focusedBorderColor = Color.White,
+                    contentPadding = PaddingValues(horizontal = 14.dp, vertical = 6.dp)
                 ) {
                     Icon(imageVector = Icons.Default.ContentPaste, contentDescription = null, tint = Color.Black)
                     Spacer(modifier = Modifier.width(6.dp))
-                    Text(text = "粘贴", color = Color.Black, fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                    Text(text = "粘贴", color = Color.Black, fontSize = 12.sp, fontWeight = FontWeight.Bold)
                 }
             }
         }

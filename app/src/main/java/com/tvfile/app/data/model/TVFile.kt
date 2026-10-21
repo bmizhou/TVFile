@@ -18,7 +18,7 @@ data class TVFile(
 ) {
     val formattedSize: String
         get() {
-            if (isDirectory) return "${itemCount} 项"
+            if (isDirectory) return if (itemCount > 0) "${itemCount} 项" else "文件夹"
             if (size <= 0) return "0 B"
             val units = arrayOf("B", "KB", "MB", "GB", "TB")
             var digitGroups = (Math.log10(size.toDouble()) / Math.log10(1024.0)).toInt()

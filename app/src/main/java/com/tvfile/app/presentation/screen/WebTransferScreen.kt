@@ -14,6 +14,8 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontFamily
@@ -23,6 +25,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.tvfile.app.data.model.FileCategory
 import com.tvfile.app.data.model.TVFile
+import com.tvfile.app.presentation.component.TVButton
 import com.tvfile.app.presentation.component.TVCard
 import com.tvfile.app.presentation.theme.*
 
@@ -44,16 +47,25 @@ fun WebTransferScreen(
     var fileToDelete by remember { mutableStateOf<TVFile?>(null) }
     var showClearConfirm by remember { mutableStateOf(false) }
 
+    val serverBtnFocusRequester = remember { FocusRequester() }
+
+    LaunchedEffect(Unit) {
+        kotlinx.coroutines.delay(150)
+        try {
+            serverBtnFocusRequester.requestFocus()
+        } catch (_: Exception) {}
+    }
+
     val totalBytes = files.sumOf { it.size }
     val totalFormatted = formatBytes(totalBytes)
 
     Column(
         modifier = modifier
             .fillMaxSize()
-            .padding(16.dp),
-        verticalArrangement = Arrangement.spacedBy(14.dp)
+            .padding(18.dp),
+        verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
-        // 顶部控制栏 (端口: 45789)
+        // 1. 顶部：开启/关闭 HTTP 服务器功能栏 (TVButton 焦点醒目)
         Surface(
             shape = RoundedCornerShape(16.dp),
             color = TVCardBg,
@@ -72,19 +84,20 @@ fun WebTransferScreen(
                     horizontalArrangement = Arrangement.spacedBy(14.dp),
                     modifier = Modifier.weight(1f)
                 ) {
-                    Button(
+                    TVButton(
                         onClick = onToggleServer,
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = if (isServerRunning) Color(0xFF3B1A22) else TVAccentGreen
-                        ),
-                        border = if (isServerRunning) BorderStroke(1.dp, TVAccentRed.copy(alpha = 0.6f)) else null,
-                        shape = RoundedCornerShape(10.dp)
-                    ) {
+                        focusRequester = serverBtnFocusRequester,
+                        focusedBackgroundColor = if (isServerRunning) Color(0xFF5E1724) else TVAccentCyan,
+                        unfocusedBackgroundColor = if (isServerRunning) Color(0xFF3B1A22) else TVAccentGreen,
+                        focusedBorderColor = Color.White,
+                        unfocusedBorderColor = if (isServerRunning) TVAccentRed.copy(alpha = 0.6f) else Color.Transparent,
+                        contentPadding = PaddingValues(horizontal = 18.dp, vertical = 10.dp)
+                    ) { isFocused ->
                         Text(
                             text = if (isServerRunning) "⏹ 关闭 HTTP 服务" else "▶ 开启 HTTP 服务",
-                            color = if (isServerRunning) TVAccentRed else Color.Black,
+                            color = if (isServerRunning) Color.White else Color.Black,
                             fontWeight = FontWeight.Bold,
-                            fontSize = 12.sp
+                            fontSize = 13.sp
                         )
                     }
 
@@ -95,33 +108,33 @@ fun WebTransferScreen(
                         ) {
                             Box(
                                 modifier = Modifier
-                                    .size(8.dp)
+                                    .size(10.dp)
                                     .background(TVAccentGreen, shape = CircleShape)
                             )
                             Text(
                                 text = "服务已启动 (端口: 45789)",
                                 color = TVAccentGreen,
-                                fontSize = 12.sp,
-                                fontWeight = FontWeight.SemiBold
+                                fontSize = 13.sp,
+                                fontWeight = FontWeight.Bold
                             )
                         }
 
                         Surface(
                             shape = RoundedCornerShape(8.dp),
                             color = Color(0xFF0B101A),
-                            border = BorderStroke(1.dp, TVBorder),
+                            border = BorderStroke(1.dp, TVAccentCyan.copy(alpha = 0.5f)),
                             modifier = Modifier.padding(horizontal = 4.dp)
                         ) {
                             Row(
-                                modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
+                                modifier = Modifier.padding(horizontal = 14.dp, vertical = 6.dp),
                                 verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.spacedBy(6.dp)
+                                horizontalArrangement = Arrangement.spacedBy(8.dp)
                             ) {
-                                Text(text = "🌐", fontSize = 12.sp)
+                                Text(text = "🌐", fontSize = 14.sp)
                                 Text(
                                     text = serverUrl,
                                     color = TVAccentCyan,
-                                    fontSize = 13.sp,
+                                    fontSize = 14.sp,
                                     fontFamily = FontFamily.Monospace,
                                     fontWeight = FontWeight.Bold
                                 )
@@ -131,7 +144,7 @@ fun WebTransferScreen(
                         Text(
                             text = "HTTP 服务未开启，点击开启后局域网电脑/手机即可免线直传文件至电视",
                             color = TVTextMuted,
-                            fontSize = 12.sp
+                            fontSize = 13.sp
                         )
                     }
                 }
@@ -140,13 +153,14 @@ fun WebTransferScreen(
                     Text(
                         text = "📁 保存目录: /storage/emulated/0/tvfile/",
                         color = TVTextSecondary,
-                        fontSize = 11.sp
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.Medium
                     )
                 }
             }
         }
 
-        // 下方已接收文件列表面板
+        // 2. 下方：类似用户截图样式的「已接收文件列表」完整面板 (去掉了搜索框)
         Surface(
             shape = RoundedCornerShape(20.dp),
             color = TVSurface,
@@ -157,10 +171,11 @@ fun WebTransferScreen(
         ) {
             Column(
                 modifier = Modifier
-                    .padding(20.dp)
+                    .padding(22.dp)
                     .fillMaxSize(),
-                verticalArrangement = Arrangement.spacedBy(14.dp)
+                verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
+                // 面板顶栏
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween,
@@ -168,45 +183,45 @@ fun WebTransferScreen(
                 ) {
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        horizontalArrangement = Arrangement.spacedBy(10.dp)
                     ) {
-                        Text(text = "📁", fontSize = 20.sp)
+                        Text(text = "📁", fontSize = 22.sp)
                         Text(
                             text = "已接收文件列表",
                             color = Color.White,
-                            fontSize = 17.sp,
+                            fontSize = 18.sp,
                             fontWeight = FontWeight.Bold
                         )
                         Text(
                             text = "共 " + totalFilesCount + " 项 · 占用 " + totalFormatted,
                             color = TVTextSecondary,
-                            fontSize = 13.sp
+                            fontSize = 14.sp
                         )
                     }
 
-                    Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                        Button(
+                    Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                        TVButton(
                             onClick = onRefreshList,
-                            colors = ButtonDefaults.buttonColors(containerColor = TVCardBg),
-                            border = BorderStroke(1.dp, TVBorder),
-                            shape = RoundedCornerShape(8.dp),
-                            contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp)
+                            focusedBackgroundColor = TVAccentBlue,
+                            unfocusedBackgroundColor = TVCardBg,
+                            contentPadding = PaddingValues(horizontal = 14.dp, vertical = 6.dp)
                         ) {
-                            Icon(imageVector = Icons.Default.Refresh, contentDescription = null, tint = Color.White, modifier = Modifier.size(14.dp))
-                            Spacer(modifier = Modifier.width(4.dp))
-                            Text(text = "刷新列表", color = Color.White, fontSize = 12.sp)
+                            Icon(imageVector = Icons.Default.Refresh, contentDescription = null, tint = Color.White, modifier = Modifier.size(16.dp))
+                            Spacer(modifier = Modifier.width(6.dp))
+                            Text(text = "刷新列表", color = Color.White, fontSize = 13.sp)
                         }
 
-                        Button(
+                        TVButton(
                             onClick = { showClearConfirm = true },
-                            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF331518)),
-                            border = BorderStroke(1.dp, TVAccentRed.copy(alpha = 0.4f)),
-                            shape = RoundedCornerShape(8.dp),
-                            contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp)
-                        ) {
-                            Icon(imageVector = Icons.Default.Delete, contentDescription = null, tint = TVAccentRed, modifier = Modifier.size(14.dp))
-                            Spacer(modifier = Modifier.width(4.dp))
-                            Text(text = "清空历史", color = TVAccentRed, fontSize = 12.sp)
+                            focusedBackgroundColor = TVAccentRed,
+                            unfocusedBackgroundColor = Color(0xFF331518),
+                            focusedBorderColor = Color.White,
+                            unfocusedBorderColor = TVAccentRed.copy(alpha = 0.5f),
+                            contentPadding = PaddingValues(horizontal = 14.dp, vertical = 6.dp)
+                        ) { isFocused ->
+                            Icon(imageVector = Icons.Default.Delete, contentDescription = null, tint = if (isFocused) Color.White else TVAccentRed, modifier = Modifier.size(16.dp))
+                            Spacer(modifier = Modifier.width(6.dp))
+                            Text(text = "清空历史", color = if (isFocused) Color.White else TVAccentRed, fontSize = 13.sp)
                         }
                     }
                 }
@@ -214,7 +229,7 @@ fun WebTransferScreen(
                 // 分类 Chip (无搜索框)
                 Row(
                     modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(10.dp)
+                    horizontalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
                     CategoryChip(
                         title = "全部",
@@ -258,7 +273,7 @@ fun WebTransferScreen(
                         Text(
                             text = if (isServerRunning) "暂无已接收的文件，请在手机/电脑浏览器中上传" else "服务未启动",
                             color = TVTextMuted,
-                            fontSize = 13.sp
+                            fontSize = 15.sp
                         )
                     }
                 } else {
@@ -284,18 +299,19 @@ fun WebTransferScreen(
     if (fileToDelete != null) {
         AlertDialog(
             onDismissRequest = { fileToDelete = null },
-            title = { Text("确认从电视删除文件？", color = Color.White, fontSize = 16.sp, fontWeight = FontWeight.Bold) },
-            text = { Text("即将永久删除电视内部存储 tvfile/ 中的文件： " + fileToDelete!!.name, color = TVTextSecondary, fontSize = 13.sp) },
+            title = { Text("确认从电视删除文件？", color = Color.White, fontSize = 18.sp, fontWeight = FontWeight.Bold) },
+            text = { Text("即将永久删除电视内部存储 tvfile/ 中的文件： " + fileToDelete!!.name, color = TVTextSecondary, fontSize = 14.sp) },
             confirmButton = {
-                Button(
+                TVButton(
                     onClick = {
                         val f = fileToDelete!!
                         fileToDelete = null
                         onDeleteFile(f)
                     },
-                    colors = ButtonDefaults.buttonColors(containerColor = TVAccentRed)
+                    focusedBackgroundColor = TVAccentRed,
+                    unfocusedBackgroundColor = TVAccentRed
                 ) {
-                    Text("确认删除", color = Color.White)
+                    Text("确认删除", color = Color.White, fontWeight = FontWeight.Bold)
                 }
             },
             dismissButton = {
@@ -310,17 +326,18 @@ fun WebTransferScreen(
     if (showClearConfirm) {
         AlertDialog(
             onDismissRequest = { showClearConfirm = false },
-            title = { Text("确认清空所有已接收文件？", color = Color.White, fontSize = 16.sp, fontWeight = FontWeight.Bold) },
-            text = { Text("此操作将清空电视内部存储 tvfile/ 目录下的全部文件，操作不可逆！", color = TVTextSecondary, fontSize = 13.sp) },
+            title = { Text("确认清空所有已接收文件？", color = Color.White, fontSize = 18.sp, fontWeight = FontWeight.Bold) },
+            text = { Text("此操作将清空电视内部存储 tvfile/ 目录下的全部文件，操作不可逆！", color = TVTextSecondary, fontSize = 14.sp) },
             confirmButton = {
-                Button(
+                TVButton(
                     onClick = {
                         showClearConfirm = false
                         onClearAll()
                     },
-                    colors = ButtonDefaults.buttonColors(containerColor = TVAccentRed)
+                    focusedBackgroundColor = TVAccentRed,
+                    unfocusedBackgroundColor = TVAccentRed
                 ) {
-                    Text("确认清空", color = Color.White)
+                    Text("确认清空", color = Color.White, fontWeight = FontWeight.Bold)
                 }
             },
             dismissButton = {
@@ -342,27 +359,26 @@ private fun CategoryChip(
     onClick: () -> Unit
 ) {
     val displayText = if (count != null) "$title ($count)" else title
-    Surface(
+    TVCard(
+        onClick = onClick,
         shape = RoundedCornerShape(20.dp),
-        color = if (isSelected) Color(0xFF0B2538) else Color(0xFF131B2A),
-        border = BorderStroke(
-            if (isSelected) 1.5.dp else 1.dp,
-            if (isSelected) TVAccentCyan else TVBorder
-        ),
-        modifier = Modifier.clickable(onClick = onClick)
+        focusedBackgroundColor = Color(0xFF0F324E),
+        unfocusedBackgroundColor = if (isSelected) Color(0xFF0B2538) else Color(0xFF131B2A),
+        focusedBorderColor = TVAccentCyan,
+        unfocusedBorderColor = if (isSelected) TVAccentCyan else TVBorder
     ) {
         Row(
-            modifier = Modifier.padding(horizontal = 14.dp, vertical = 6.dp),
+            modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
             verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(4.dp)
+            horizontalArrangement = Arrangement.spacedBy(6.dp)
         ) {
             if (icon != null) {
-                Text(text = icon, fontSize = 12.sp)
+                Text(text = icon, fontSize = 14.sp)
             }
             Text(
                 text = displayText,
                 color = if (isSelected) TVAccentCyan else TVTextSecondary,
-                fontSize = 12.sp,
+                fontSize = 13.5.sp,
                 fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium
             )
         }
@@ -379,11 +395,12 @@ private fun ReceivedFileCard(
 
     TVCard(
         onClick = onOpen,
+        shape = RoundedCornerShape(14.dp),
         modifier = Modifier.fillMaxWidth()
     ) {
         Row(
             modifier = Modifier
-                .padding(horizontal = 16.dp, vertical = 12.dp)
+                .padding(horizontal = 18.dp, vertical = 14.dp)
                 .fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(16.dp)
@@ -392,61 +409,59 @@ private fun ReceivedFileCard(
                 shape = RoundedCornerShape(12.dp),
                 color = Color(0xFF162033),
                 border = BorderStroke(1.dp, Color(0xFF23314A)),
-                modifier = Modifier.size(44.dp)
+                modifier = Modifier.size(50.dp)
             ) {
                 Box(contentAlignment = Alignment.Center) {
                     Icon(
                         imageVector = typeIcon,
                         contentDescription = null,
                         tint = iconColor,
-                        modifier = Modifier.size(24.dp)
+                        modifier = Modifier.size(28.dp)
                     )
                 }
             }
 
             Column(
                 modifier = Modifier.weight(1f),
-                verticalArrangement = Arrangement.spacedBy(4.dp)
+                verticalArrangement = Arrangement.spacedBy(6.dp)
             ) {
                 Text(
                     text = file.name,
                     color = Color.White,
-                    fontSize = 13.5.sp,
+                    fontSize = 15.sp,
                     fontWeight = FontWeight.Bold,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis
                 )
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(14.dp)
+                    horizontalArrangement = Arrangement.spacedBy(16.dp)
                 ) {
-                    Text(text = "💾 " + file.formattedSize, color = TVTextSecondary, fontSize = 11.5.sp)
-                    Text(text = "🕒 " + formatDate(file.lastModified), color = TVTextSecondary, fontSize = 11.5.sp)
-                    Text(text = "📁 tvfile/", color = TVAccentCyan, fontSize = 11.5.sp, fontWeight = FontWeight.Medium)
+                    Text(text = "💾 " + file.formattedSize, color = TVTextSecondary, fontSize = 12.5.sp)
+                    Text(text = "🕒 " + formatDate(file.lastModified), color = TVTextSecondary, fontSize = 12.5.sp)
+                    Text(text = "📁 tvfile/", color = TVAccentCyan, fontSize = 12.5.sp, fontWeight = FontWeight.SemiBold)
                 }
             }
 
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                Button(
+            Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                TVButton(
                     onClick = onOpen,
-                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF152033)),
-                    border = BorderStroke(1.dp, Color(0xFF253652)),
-                    shape = RoundedCornerShape(8.dp),
+                    focusedBackgroundColor = TVAccentCyan,
+                    unfocusedBackgroundColor = Color(0xFF152033),
                     contentPadding = PaddingValues(0.dp),
-                    modifier = Modifier.size(34.dp)
+                    modifier = Modifier.size(38.dp)
                 ) {
-                    Text(text = "📥", fontSize = 14.sp)
+                    Text(text = "📥", fontSize = 16.sp)
                 }
 
-                Button(
+                TVButton(
                     onClick = onDelete,
-                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF152033)),
-                    border = BorderStroke(1.dp, Color(0xFF253652)),
-                    shape = RoundedCornerShape(8.dp),
+                    focusedBackgroundColor = TVAccentRed,
+                    unfocusedBackgroundColor = Color(0xFF152033),
                     contentPadding = PaddingValues(0.dp),
-                    modifier = Modifier.size(34.dp)
+                    modifier = Modifier.size(38.dp)
                 ) {
-                    Text(text = "🗑️", fontSize = 14.sp)
+                    Text(text = "🗑️", fontSize = 16.sp)
                 }
             }
         }

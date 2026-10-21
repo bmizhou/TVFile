@@ -38,6 +38,10 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     private val _filterCategory = MutableStateFlow(FileCategory.ALL)
     val filterCategory: StateFlow<FileCategory> = _filterCategory.asStateFlow()
 
+    // 5.1 排序模式 (最新优先、名称 A-Z、大小等)
+    private val _sortMode = MutableStateFlow(com.tvfile.app.data.model.SortMode.TIME_DESC)
+    val sortMode: StateFlow<com.tvfile.app.data.model.SortMode> = _sortMode.asStateFlow()
+
     // 6. 视图模式 (网格 vs 列表)
     private val _viewMode = MutableStateFlow(ViewMode.GRID)
     val viewMode: StateFlow<ViewMode> = _viewMode.asStateFlow()
@@ -49,9 +53,22 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList()
     )
 
-    // 经过类型过滤的文件列表
-    val fileList: StateFlow<List<TVFile>> = combine(_rawFileList, _filterCategory) { files, cat ->
-        if (cat == FileCategory.ALL) files else files.filter { it.category == cat }
+    // 经过类型过滤和排序模式处理的文件列表 (文件夹永远优先排在前面)
+    val fileList: StateFlow<List<TVFile>> = combine(_rawFileList, _filterCategory, _sortMode) { files, cat, sort ->
+        val filtered = if (cat == FileCategory.ALL) files else files.filter { it.category == cat }
+        val dirs = filtered.filter { it.isDirectory }
+        val nonDirs = filtered.filter { !it.isDirectory }
+
+        val comparator = when (sort) {
+            com.tvfile.app.data.model.SortMode.TIME_DESC -> compareByDescending<TVFile> { it.lastModified }
+            com.tvfile.app.data.model.SortMode.TIME_ASC -> compareBy<TVFile> { it.lastModified }
+            com.tvfile.app.data.model.SortMode.NAME_ASC -> compareBy<TVFile> { it.name.lowercase() }
+            com.tvfile.app.data.model.SortMode.NAME_DESC -> compareByDescending<TVFile> { it.name.lowercase() }
+            com.tvfile.app.data.model.SortMode.SIZE_DESC -> compareByDescending<TVFile> { it.size }
+            com.tvfile.app.data.model.SortMode.SIZE_ASC -> compareBy<TVFile> { it.size }
+        }
+
+        dirs.sortedWith(comparator) + nonDirs.sortedWith(comparator)
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
     
@@ -93,6 +110,11 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
 
     private val _apkDownloadProgress = MutableStateFlow<Int?>(null)
     val apkDownloadProgress: StateFlow<Int?> = _apkDownloadProgress.asStateFlow()
+
+    private val _downloadingApkFile = MutableStateFlow<TVFile?>(null)
+    val downloadingApkFile: StateFlow<TVFile?> = _downloadingApkFile.asStateFlow()
+
+    private var apkDownloadJob: kotlinx.coroutines.Job? = null
 
     // 9. 选中与操作菜单
     private val _selectedFile = MutableStateFlow<TVFile?>(null)
@@ -250,8 +272,15 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                     if (file.storageType == StorageType.INTERNAL || file.storageType == StorageType.USB) {
                         ApkInstaller.installApk(getApplication(), File(file.path))
                     } else {
-                        ApkInstaller.downloadAndInstall(getApplication(), file, provider) { progress ->
-                            _apkDownloadProgress.value = if (progress >= 100) null else progress
+                        _downloadingApkFile.value = file
+                        _apkDownloadProgress.value = 0
+                        apkDownloadJob?.cancel()
+                        apkDownloadJob = viewModelScope.launch {
+                            ApkInstaller.downloadAndInstall(getApplication(), file, provider) { progress ->
+                                _apkDownloadProgress.value = progress
+                            }
+                            _apkDownloadProgress.value = null
+                            _downloadingApkFile.value = null
                         }
                     }
                 }
@@ -396,6 +425,17 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
 
     fun setWebFilterCategory(category: FileCategory) {
         _webFilterCategory.value = category
+    }
+
+
+    fun setSortMode(mode: com.tvfile.app.data.model.SortMode) {
+        _sortMode.value = mode
+    }
+
+    fun cancelApkDownload() {
+        apkDownloadJob?.cancel()
+        _apkDownloadProgress.value = null
+        _downloadingApkFile.value = null
     }
 
 }
