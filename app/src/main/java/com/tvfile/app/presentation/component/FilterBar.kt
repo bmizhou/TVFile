@@ -25,7 +25,7 @@ fun FilterBar(
 ) {
     Row(
         modifier = modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.spacedBy(8.dp)
+        horizontalArrangement = Arrangement.spacedBy(12.dp)
     ) {
         FileCategory.values().forEach { cat ->
             val isSelected = selectedCategory == cat
@@ -49,7 +49,7 @@ private fun FilterChipItem(
 
     val bgColor = when {
         isFocused -> TVAccentBlue
-        isSelected -> Color(0xFF142845)
+        isSelected -> Color(0xFF0F3150)
         else -> TVSurface
     }
 
@@ -61,14 +61,16 @@ private fun FilterChipItem(
 
     val borderColor = when {
         isFocused -> TVAccentCyan
-        isSelected -> TVAccentCyan.copy(alpha = 0.5f)
+        isSelected -> TVAccentCyan.copy(alpha = 0.8f)
         else -> Color.Transparent
     }
 
+    // 大屏强化：增大按键与字号 (16sp, 内边距 20dp*10dp)
     Surface(
-        shape = RoundedCornerShape(20.dp),
+        shape = RoundedCornerShape(24.dp),
         color = bgColor,
-        border = BorderStroke(1.dp, borderColor),
+        border = BorderStroke(if (isFocused || isSelected) 2.dp else 1.dp, borderColor),
+        shadowElevation = if (isFocused) 8.dp else 0.dp,
         modifier = Modifier.clickable(
             interactionSource = interactionSource,
             indication = null,
@@ -78,9 +80,9 @@ private fun FilterChipItem(
         Text(
             text = category.displayName,
             color = textColor,
-            fontSize = 12.sp,
-            fontWeight = if (isSelected || isFocused) FontWeight.Bold else FontWeight.Normal,
-            modifier = Modifier.padding(horizontal = 14.dp, vertical = 6.dp)
+            fontSize = 16.sp,
+            fontWeight = if (isSelected || isFocused) FontWeight.Bold else FontWeight.Medium,
+            modifier = Modifier.padding(horizontal = 20.dp, vertical = 10.dp)
         )
     }
 }

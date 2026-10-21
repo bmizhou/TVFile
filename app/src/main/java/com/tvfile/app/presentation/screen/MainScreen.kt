@@ -617,22 +617,7 @@ private fun Sidebar(
             )
         }
 
-        Surface(
-            shape = RoundedCornerShape(12.dp),
-            color = TVCardBg,
-            border = BorderStroke(1.dp, TVBorder),
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            Column(
-                modifier = Modifier.padding(12.dp),
-                verticalArrangement = Arrangement.spacedBy(6.dp)
-            ) {
-                Text(text = "遥控器快捷提示", color = TVTextPrimary, fontSize = 12.5.sp, fontWeight = FontWeight.Bold)
-                Text(text = "OK: 打开 / 进入", color = TVTextSecondary, fontSize = 11.5.sp)
-                Text(text = "MENU: 文件操作抽屉", color = TVTextSecondary, fontSize = 11.5.sp)
-                Text(text = "BACK: 返回上一级", color = TVTextSecondary, fontSize = 11.5.sp)
-            }
-        }
+
     }
 }
 

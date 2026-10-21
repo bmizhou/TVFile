@@ -1,28 +1,28 @@
 package com.tvfile.app.presentation.screen
 
+import android.content.res.Configuration
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
-import androidx.compose.foundation.lazy.grid.items
-import androidx.compose.foundation.lazy.items
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.foundation.lazy.grid.itemsIndexed
-import kotlinx.coroutines.delay
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.InsertDriveFile
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -32,6 +32,7 @@ import com.tvfile.app.data.model.TVFile
 import com.tvfile.app.data.model.ViewMode
 import com.tvfile.app.presentation.component.TVCard
 import com.tvfile.app.presentation.theme.*
+import kotlinx.coroutines.delay
 
 @Composable
 fun FileBrowserScreen(
@@ -42,12 +43,15 @@ fun FileBrowserScreen(
     onFileLongClick: (TVFile) -> Unit,
     modifier: Modifier = Modifier
 ) {
-        val firstItemFocusRequester = remember { FocusRequester() }
+    val configuration = LocalConfiguration.current
+    val isPortrait = configuration.orientation == Configuration.ORIENTATION_PORTRAIT
 
-    // 解决进入文件夹焦点跳回左侧 Tab 的核心修复：进入新目录后自动锁定首个文件
+    val firstItemFocusRequester = remember { FocusRequester() }
+
+    // 进入新目录后自动锁定首个文件
     LaunchedEffect(files) {
         if (files.isNotEmpty()) {
-            kotlinx.coroutines.delay(120)
+            delay(120)
             try {
                 firstItemFocusRequester.requestFocus()
             } catch (_: Exception) {}
@@ -62,16 +66,17 @@ fun FileBrowserScreen(
             Text(
                 text = "当前目录下无文件",
                 color = TVTextMuted,
-                fontSize = 16.sp
+                fontSize = 17.sp
             )
         }
         return
     }
 
     if (viewMode == ViewMode.GRID) {
-        // 固定 5 列排版，保证大屏远视距下图标巨大、文字清晰
+        // 【解决问题 4】：竖屏 3 列，横屏 5 列
+        val columnCount = if (isPortrait) 3 else 5
         LazyVerticalGrid(
-            columns = GridCells.Fixed(5),
+            columns = GridCells.Fixed(columnCount),
             contentPadding = PaddingValues(16.dp),
             horizontalArrangement = Arrangement.spacedBy(16.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp),
@@ -108,6 +113,9 @@ fun FileBrowserScreen(
     }
 }
 
+/**
+ * 【解决问题 3】：大幅加大主标题 (17.5sp) 与次标题 (14.5sp)
+ */
 @Composable
 private fun FileGridCard(
     file: TVFile,
@@ -146,22 +154,24 @@ private fun FileGridCard(
                 }
             }
 
+            // 主标题加粗加大至 17.5sp
             Text(
                 text = file.name,
                 color = TVTextPrimary,
-                fontSize = 15.sp,
+                fontSize = 17.5.sp,
                 fontWeight = FontWeight.Bold,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis
             )
 
+            // 次标题加大至 14.5sp
             Text(
                 text = file.formattedSize,
                 color = TVTextSecondary,
-                fontSize = 13.sp
+                fontSize = 14.5.sp,
+                fontWeight = FontWeight.Medium
             )
 
-            // 视频断点记忆播放进度条指示
             if (file.category == FileCategory.VIDEO && playbackProgress > 0.02f) {
                 LinearProgressIndicator(
                     progress = { playbackProgress },
@@ -201,14 +211,15 @@ private fun FileListRow(
                 imageVector = icon,
                 contentDescription = null,
                 tint = iconColor,
-                modifier = Modifier.size(34.dp)
+                modifier = Modifier.size(36.dp)
             )
             Spacer(modifier = Modifier.width(18.dp))
             Column(modifier = Modifier.weight(2f)) {
+                // 主标题 18sp
                 Text(
                     text = file.name,
                     color = TVTextPrimary,
-                    fontSize = 16.sp,
+                    fontSize = 18.sp,
                     fontWeight = FontWeight.Bold,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis
@@ -218,21 +229,23 @@ private fun FileListRow(
                     Text(
                         text = "已播放 $percent%",
                         color = TVAccentCyan,
-                        fontSize = 12.sp,
+                        fontSize = 13.sp,
                         fontWeight = FontWeight.SemiBold
                     )
                 }
             }
+            // 次标题 15sp
             Text(
                 text = file.formattedSize,
                 color = TVTextSecondary,
-                fontSize = 14.sp,
+                fontSize = 15.sp,
+                fontWeight = FontWeight.Medium,
                 modifier = Modifier.weight(1f)
             )
             Text(
                 text = if (file.isDirectory) "进入 ❯" else "打开 ❯",
                 color = TVAccentCyan,
-                fontSize = 14.sp,
+                fontSize = 15.sp,
                 fontWeight = FontWeight.Bold
             )
         }
