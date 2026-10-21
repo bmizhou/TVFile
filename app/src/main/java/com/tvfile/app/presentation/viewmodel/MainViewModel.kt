@@ -105,8 +105,8 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     private val _activeAudioUrl = MutableStateFlow<Pair<TVFile, String>?>(null)
     val activeAudioUrl: StateFlow<Pair<TVFile, String>?> = _activeAudioUrl.asStateFlow()
 
-    private val _activeImageFile = MutableStateFlow<TVFile?>(null)
-    val activeImageFile: StateFlow<TVFile?> = _activeImageFile.asStateFlow()
+    private val _activeImageUrl = MutableStateFlow<Pair<TVFile, String>?>(null)
+    val activeImageUrl: StateFlow<Pair<TVFile, String>?> = _activeImageUrl.asStateFlow()
 
     private val _apkDownloadProgress = MutableStateFlow<Int?>(null)
     val apkDownloadProgress: StateFlow<Int?> = _apkDownloadProgress.asStateFlow()
@@ -191,8 +191,8 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             _activeAudioUrl.value = null
             return true
         }
-        if (_activeImageFile.value != null) {
-            _activeImageFile.value = null
+        if (_activeImageUrl.value != null) {
+            _activeImageUrl.value = null
             return true
         }
 
@@ -266,7 +266,12 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                     }
                 }
                 FileCategory.IMAGE -> {
-                    _activeImageFile.value = file
+                    if (file.storageType == StorageType.INTERNAL || file.storageType == StorageType.USB) {
+                        _activeImageUrl.value = Pair(file, "file://${file.path}")
+                    } else {
+                        val streamUrl = repository.streamerServer.registerStream(file, provider)
+                        _activeImageUrl.value = Pair(file, streamUrl)
+                    }
                 }
                 FileCategory.APK -> {
                     if (file.storageType == StorageType.INTERNAL || file.storageType == StorageType.USB) {
@@ -292,7 +297,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     fun closePlayers() {
         _activeVideoUrl.value = null
         _activeAudioUrl.value = null
-        _activeImageFile.value = null
+        _activeImageUrl.value = null
         _apkDownloadProgress.value = null
     }
 

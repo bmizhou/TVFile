@@ -62,7 +62,7 @@ fun MainScreen(
     // 播放与弹窗状态
     val activeVideoUrl by viewModel.activeVideoUrl.collectAsState()
     val activeAudioUrl by viewModel.activeAudioUrl.collectAsState()
-    val activeImageFile by viewModel.activeImageFile.collectAsState()
+    val activeImageUrl by viewModel.activeImageUrl.collectAsState()
     val apkDownloadProgress by viewModel.apkDownloadProgress.collectAsState()
     val downloadingApkFile by viewModel.downloadingApkFile.collectAsState()
     val isMenuOpen by viewModel.isMenuOpen.collectAsState()
@@ -286,10 +286,11 @@ fun MainScreen(
             )
         }
 
-        // 图片查看全屏覆盖层
-        if (activeImageFile != null) {
+        // 图片查看全屏覆盖层 (支持本地与 WebDAV/SMB 远程大图)
+        if (activeImageUrl != null) {
             ImageViewerOverlay(
-                file = activeImageFile!!,
+                file = activeImageUrl!!.first,
+                imageUri = activeImageUrl!!.second,
                 onClose = { viewModel.closePlayers() }
             )
         }
@@ -719,13 +720,13 @@ private fun HeaderToolbar(
                     imageVector = Icons.Default.Sort,
                     contentDescription = null,
                     tint = if (isFocused) Color.White else TVAccentCyan,
-                    modifier = Modifier.size(16.dp)
+                    modifier = Modifier.size(20.dp)
                 )
                 Spacer(modifier = Modifier.width(6.dp))
                 Text(
                     text = sortMode.displayName.substringBefore(" ("),
                     color = if (isFocused) Color.White else TVTextPrimary,
-                    fontSize = 12.sp,
+                    fontSize = 15.5.sp,
                     fontWeight = FontWeight.SemiBold
                 )
             }

@@ -44,7 +44,30 @@ class WebDavStorageProvider(
             return "$protocol://$host$portStr$cleanRoot"
         }
 
-    private fun buildUrl(path: String): String {
+    fun buildUrl(path: String): String {
+        return getFullUrl(path)
+    }
+
+    fun getFullUrl(path: String): String {
+        if (path.startsWith("http://") || path.startsWith("https://")) return path
+        val clean = path.trim('/')
+        return if (clean.isBlank()) baseUrl + "/" else "$baseUrl/$clean"
+    }
+
+    suspend fun openRangeStream(file: TVFile, rangeHeader: String): Result<InputStream> = withContext(Dispatchers.IO) {
+        runCatching {
+            val url = getFullUrl(file.path)
+            val request = Request.Builder()
+                .url(url)
+                .header("Range", rangeHeader)
+                .get()
+                .build()
+            val response = client.newCall(request).execute()
+            response.body?.byteStream() ?: throw IllegalStateException("Empty body")
+        }
+    }
+
+    private fun oldBuildUrl(path: String): String {
         val clean = path.trim('/')
         return if (clean.isBlank()) baseUrl + "/" else "$baseUrl/$clean"
     }
@@ -91,9 +114,18 @@ class WebDavStorageProvider(
                 if (cleanHref == cleanUrl || cleanHref.isBlank()) continue
 
                 val isDir = respEl.getElementsByTagNameNS("*", "collection").length > 0
-                val displayName = respEl.getElementsByTagNameNS("*", "displayname").item(0)?.textContent
+                val rawDisplayName = respEl.getElementsByTagNameNS("*", "displayname").item(0)?.textContent
                     ?: href.trimEnd('/').substringAfterLast('/')
+                // 解决中文标题乱码/URL编码显示错误
+                val displayName = try {
+                    java.net.URLDecoder.decode(rawDisplayName, "UTF-8")
+                } catch (_: Exception) {
+                    rawDisplayName
+                }
+
                 val contentLength = respEl.getElementsByTagNameNS("*", "getcontentlength").item(0)?.textContent?.toLongOrNull() ?: 0L
+                val lastModStr = respEl.getElementsByTagNameNS("*", "getlastmodified").item(0)?.textContent ?: ""
+                val lastModifiedTime = parseWebDavDate(lastModStr)
 
                 list.add(
                     TVFile(
@@ -101,7 +133,7 @@ class WebDavStorageProvider(
                         name = displayName,
                         path = href,
                         size = if (isDir) 0L else contentLength,
-                        lastModified = System.currentTimeMillis(),
+                        lastModified = lastModifiedTime,
                         isDirectory = isDir,
                         mimeType = MimeUtils.getMimeType(displayName),
                         category = MimeUtils.getCategory(displayName, isDir),
@@ -117,7 +149,7 @@ class WebDavStorageProvider(
 
     override suspend fun openInputStream(file: TVFile): Result<InputStream> = withContext(Dispatchers.IO) {
         runCatching {
-            val url = if (file.path.startsWith("http")) file.path else buildUrl(file.path)
+            val url = getFullUrl(file.path)
             val request = Request.Builder().url(url).get().build()
             val response = client.newCall(request).execute()
             response.body?.byteStream() ?: throw IllegalStateException("Empty response body")
@@ -199,4 +231,15 @@ class WebDavStorageProvider(
     override suspend fun getSpaceInfo(): Pair<Long, Long> = withContext(Dispatchers.IO) {
         Pair(0L, 0L)
     }
+
+    private fun parseWebDavDate(dateStr: String): Long {
+        if (dateStr.isBlank()) return System.currentTimeMillis()
+        return try {
+            val format = java.text.SimpleDateFormat("EEE, dd MMM yyyy HH:mm:ss zzz", java.util.Locale.US)
+            format.parse(dateStr)?.time ?: System.currentTimeMillis()
+        } catch (_: Exception) {
+            System.currentTimeMillis()
+        }
+    }
+
 }

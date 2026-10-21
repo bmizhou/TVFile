@@ -39,6 +39,8 @@ fun VideoPlayerOverlay(
     val context = LocalContext.current
     var showResumeToast by remember { mutableStateOf(initialPosition > 5000L) }
     var resumeTimeText by remember { mutableStateOf(formatTime(initialPosition)) }
+    var playerViewRef by remember { mutableStateOf<StyledPlayerView?>(null) }
+    var isReleased by remember { mutableStateOf(false) }
 
     val exoPlayer = remember {
         ExoPlayer.Builder(context).build().apply {
@@ -52,27 +54,39 @@ fun VideoPlayerOverlay(
         }
     }
 
-    // 退出时与周期性持久化保存进度
+    // 解决退出播放闪退的关键修复：安全解绑与释放
     DisposableEffect(Unit) {
         onDispose {
-            val pos = exoPlayer.currentPosition
-            val dur = exoPlayer.duration
-            onSaveProgress(pos, dur)
-            exoPlayer.release()
-        }
-    }
-
-    // 周期性保存进度 (每 3 秒)
-    LaunchedEffect(exoPlayer) {
-        while (true) {
-            delay(3000)
-            if (exoPlayer.isPlaying) {
-                onSaveProgress(exoPlayer.currentPosition, exoPlayer.duration)
+            isReleased = true
+            runCatching {
+                val pos = exoPlayer.currentPosition
+                val dur = exoPlayer.duration
+                onSaveProgress(pos, dur)
+            }
+            runCatching {
+                exoPlayer.stop()
+            }
+            playerViewRef?.player = null
+            runCatching {
+                exoPlayer.release()
             }
         }
     }
 
-    // 续播提示框 4 秒后自动淡出
+    // 周期性保存进度 (在 player 未释放前执行)
+    LaunchedEffect(exoPlayer) {
+        while (!isReleased) {
+            delay(3000)
+            if (!isReleased) {
+                runCatching {
+                    if (exoPlayer.isPlaying) {
+                        onSaveProgress(exoPlayer.currentPosition, exoPlayer.duration)
+                    }
+                }
+            }
+        }
+    }
+
     LaunchedEffect(showResumeToast) {
         if (showResumeToast) {
             delay(4500)
@@ -96,6 +110,7 @@ fun VideoPlayerOverlay(
                     useController = true
                     setShowNextButton(false)
                     setShowPreviousButton(false)
+                    playerViewRef = this
                 }
             },
             modifier = Modifier.fillMaxSize()
@@ -105,21 +120,21 @@ fun VideoPlayerOverlay(
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(20.dp),
+                .padding(24.dp),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
             Text(
                 text = file.name,
                 color = Color.White,
-                fontSize = 15.sp,
-                fontWeight = FontWeight.SemiBold
+                fontSize = 17.sp,
+                fontWeight = FontWeight.Bold
             )
             Button(
                 onClick = onClose,
                 colors = ButtonDefaults.buttonColors(containerColor = Color(0x991F293D))
             ) {
-                Text(text = "✕ 退出 (BACK)", color = TVAccentCyan, fontSize = 12.sp)
+                Text(text = "✕ 退出 (BACK)", color = TVAccentCyan, fontSize = 14.sp, fontWeight = FontWeight.Bold)
             }
         }
 
@@ -139,28 +154,30 @@ fun VideoPlayerOverlay(
                 shadowElevation = 10.dp
             ) {
                 Row(
-                    modifier = Modifier.padding(horizontal = 20.dp, vertical = 10.dp),
+                    modifier = Modifier.padding(horizontal = 22.dp, vertical = 12.dp),
                     verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(14.dp)
+                    horizontalArrangement = Arrangement.spacedBy(16.dp)
                 ) {
                     Text(
                         text = "💡 已为您恢复到上次播放位置: $resumeTimeText",
                         color = Color.White,
-                        fontSize = 13.sp
+                        fontSize = 14.5.sp
                     )
                     Button(
                         onClick = {
-                            exoPlayer.seekTo(0)
+                            if (!isReleased) {
+                                runCatching { exoPlayer.seekTo(0) }
+                            }
                             showResumeToast = false
                         },
                         colors = ButtonDefaults.buttonColors(containerColor = TVAccentCyan),
-                        contentPadding = PaddingValues(horizontal = 12.dp, vertical = 4.dp),
-                        modifier = Modifier.height(30.dp)
+                        contentPadding = PaddingValues(horizontal = 14.dp, vertical = 4.dp),
+                        modifier = Modifier.height(32.dp)
                     ) {
                         Text(
                             text = "从头播放",
                             color = Color.Black,
-                            fontSize = 11.sp,
+                            fontSize = 12.sp,
                             fontWeight = FontWeight.Bold
                         )
                     }

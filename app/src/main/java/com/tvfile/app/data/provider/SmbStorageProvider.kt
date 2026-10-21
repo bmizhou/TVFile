@@ -84,7 +84,7 @@ class SmbStorageProvider(
                     name = item.fileName,
                     path = fullItemPath,
                     size = if (isDir) 0L else item.endOfFile,
-                    lastModified = item.changeTime.toEpochMillis(),
+                    lastModified = item.lastWriteTime.toEpochMillis(),
                     isDirectory = isDir,
                     mimeType = MimeUtils.getMimeType(item.fileName),
                     category = MimeUtils.getCategory(item.fileName, isDir),
