@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">TVFile</string>
+    <string name="tab_internal">内部存储</string>
+    <string name="tab_usb">外接存储</string>
+    <string name="tab_network">网络存储</string>
+    <string name="tab_transfer">传输任务</string>
+    <string name="cat_all">全部</string>
+    <string name="cat_video">视频</string>
+    <string name="cat_audio">音乐</string>
+    <string name="cat_image">图片</string>
+    <string name="cat_apk">安装包</string>
+</resources>
