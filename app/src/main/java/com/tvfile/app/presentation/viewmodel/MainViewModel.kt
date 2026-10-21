@@ -39,7 +39,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     val filterCategory: StateFlow<FileCategory> = _filterCategory.asStateFlow()
 
     // 5.1 排序模式 (最新优先、名称 A-Z、大小等)
-    private val _sortMode = MutableStateFlow(com.tvfile.app.data.model.SortMode.TIME_DESC)
+    private val _sortMode = MutableStateFlow(repository.getSavedSortMode())
     val sortMode: StateFlow<com.tvfile.app.data.model.SortMode> = _sortMode.asStateFlow()
 
     // 6. 视图模式 (网格 vs 列表)
@@ -435,6 +435,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
 
     fun setSortMode(mode: com.tvfile.app.data.model.SortMode) {
         _sortMode.value = mode
+        repository.saveSortMode(mode)
     }
 
     fun cancelApkDownload() {

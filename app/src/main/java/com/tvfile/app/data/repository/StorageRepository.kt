@@ -170,4 +170,20 @@ class StorageRepository(private val context: Context) {
         return true
     }
 
+
+    private val prefs = context.getSharedPreferences("tvfile_user_preferences", android.content.Context.MODE_PRIVATE)
+
+    fun getSavedSortMode(): com.tvfile.app.data.model.SortMode {
+        val saved = prefs.getString("user_sort_mode", com.tvfile.app.data.model.SortMode.TIME_DESC.name) ?: com.tvfile.app.data.model.SortMode.TIME_DESC.name
+        return try {
+            com.tvfile.app.data.model.SortMode.valueOf(saved)
+        } catch (_: Exception) {
+            com.tvfile.app.data.model.SortMode.TIME_DESC
+        }
+    }
+
+    fun saveSortMode(mode: com.tvfile.app.data.model.SortMode) {
+        prefs.edit().putString("user_sort_mode", mode.name).apply()
+    }
+
 }

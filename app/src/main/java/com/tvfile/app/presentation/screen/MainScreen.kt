@@ -84,7 +84,7 @@ fun MainScreen(
                 (context as? Activity)?.finish()
             } else {
                 lastBackPressTime = now
-                Toast.makeText(context, "再按一次返回键退出 TVFile", Toast.LENGTH_SHORT).show()
+                Toast.makeText(context, "再按一次返回键退出文件管理", Toast.LENGTH_SHORT).show()
             }
         }
     }
@@ -554,7 +554,7 @@ private fun TopStatusBar(activeTitle: String) {
             )
             Spacer(modifier = Modifier.width(10.dp))
             Text(
-                text = "TVFile",
+                text = "文件管理",
                 color = Color.White,
                 fontSize = 17.sp,
                 fontWeight = FontWeight.Bold

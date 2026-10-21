@@ -12,6 +12,7 @@ import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.tvfile.app.data.model.TVFile
@@ -41,30 +42,31 @@ fun ContextMenuDrawer(
 
     Surface(
         modifier = modifier
-            .width(320.dp)
+            .width(340.dp)
             .fillMaxHeight(),
         color = TVSurface,
-        border = BorderStroke(1.5.dp, TVAccentCyan.copy(alpha = 0.8f)),
+        border = BorderStroke(2.dp, TVAccentCyan.copy(alpha = 0.8f)),
         shape = RoundedCornerShape(topStart = 20.dp, bottomStart = 20.dp),
         shadowElevation = 24.dp
     ) {
         Column(
             modifier = Modifier
-                .padding(22.dp)
+                .padding(24.dp)
                 .fillMaxHeight(),
-            verticalArrangement = Arrangement.spacedBy(12.dp)
+            verticalArrangement = Arrangement.spacedBy(14.dp)
         ) {
             Text(
                 text = "⚡ 文件操作",
                 color = Color.White,
-                fontSize = 18.sp,
+                fontSize = 20.sp,
                 fontWeight = FontWeight.Bold
             )
             Text(
                 text = targetFile?.name ?: "未选择文件",
                 color = TVTextSecondary,
-                fontSize = 13.sp,
-                maxLines = 1
+                fontSize = 15.sp,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
             )
             HorizontalDivider(color = TVBorder, thickness = 1.dp)
 
@@ -87,7 +89,7 @@ fun ContextMenuDrawer(
             TVMenuItem(
                 title = "🗑️ 删除文件",
                 enabled = targetFile != null,
-                textColor = TVAccentRed,
+                isDanger = true,
                 onClick = onDelete
             )
             TVMenuItem(
@@ -107,19 +109,23 @@ fun ContextMenuDrawer(
                 onClick = onDismiss,
                 focusedBackgroundColor = Color(0xFF28364F),
                 unfocusedBackgroundColor = TVCardBg,
-                modifier = Modifier.fillMaxWidth()
+                modifier = Modifier.fillMaxWidth(),
+                contentPadding = PaddingValues(vertical = 12.dp)
             ) {
-                Text(text = "关闭菜单 (BACK)", color = TVTextSecondary, fontSize = 13.sp)
+                Text(text = "关闭菜单 (BACK)", color = TVTextSecondary, fontSize = 15.sp, fontWeight = FontWeight.SemiBold)
             }
         }
     }
 }
 
+/**
+ * 【解决问题 3】：大字号 (18sp) + 彻底解决焦点背景与文字颜色冲突
+ */
 @Composable
 private fun TVMenuItem(
     title: String,
     enabled: Boolean,
-    textColor: Color = Color.White,
+    isDanger: Boolean = false,
     focusRequester: FocusRequester? = null,
     onClick: () -> Unit
 ) {
@@ -128,26 +134,33 @@ private fun TVMenuItem(
         mod = mod.focusRequester(focusRequester)
     }
 
+    // 获焦背景与边框：危险操作用深红黑底+红框，普通项用深藏青底+青蓝发光框
+    val focusedBg = if (isDanger) Color(0xFF42151B) else Color(0xFF0C385C)
+    val focusedBorder = if (isDanger) TVAccentRed else TVAccentCyan
+    val unfocusedTextColor = if (isDanger) TVAccentRed else Color.White
+
     TVCard(
         onClick = if (enabled) onClick else { {} },
-        shape = RoundedCornerShape(10.dp),
-        focusedBackgroundColor = TVAccentBlue,
+        shape = RoundedCornerShape(12.dp),
+        focusedBackgroundColor = focusedBg,
         unfocusedBackgroundColor = Color.Transparent,
-        focusedBorderColor = TVAccentCyan,
+        focusedBorderColor = focusedBorder,
         unfocusedBorderColor = Color.Transparent,
+        focusedBorderWidth = 2.5.dp,
         modifier = mod
     ) {
         Row(
             modifier = Modifier
-                .padding(horizontal = 14.dp, vertical = 12.dp)
+                .padding(horizontal = 16.dp, vertical = 14.dp)
                 .fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically
         ) {
             Text(
                 text = title,
-                color = if (enabled) textColor else TVTextMuted,
-                fontSize = 14.5.sp,
-                fontWeight = FontWeight.Medium
+                // 关键点：获焦时一律采用最高对比度纯白高亮字，消除任何色差冲突
+                color = if (!enabled) TVTextMuted else Color.White,
+                fontSize = 18.sp,
+                fontWeight = FontWeight.Bold
             )
         }
     }

@@ -52,7 +52,7 @@ fun DeviceListScreen(
         modifier = modifier
             .fillMaxSize()
             .padding(20.dp),
-        verticalArrangement = Arrangement.spacedBy(16.dp)
+        verticalArrangement = Arrangement.spacedBy(24.dp)
     ) {
         Row(
             modifier = Modifier.fillMaxWidth(),
@@ -109,8 +109,9 @@ fun DeviceListScreen(
             } else {
                 LazyVerticalGrid(
                     columns = GridCells.Adaptive(minSize = 240.dp),
+                    contentPadding = PaddingValues(top = 16.dp, bottom = 32.dp, start = 8.dp, end = 8.dp),
                     horizontalArrangement = Arrangement.spacedBy(18.dp),
-                    verticalArrangement = Arrangement.spacedBy(18.dp),
+                    verticalArrangement = Arrangement.spacedBy(20.dp),
                     modifier = Modifier.fillMaxSize()
                 ) {
                     items(usbDevices) { dev ->
@@ -172,8 +173,9 @@ fun DeviceListScreen(
             } else {
                 LazyVerticalGrid(
                     columns = GridCells.Adaptive(minSize = 240.dp),
+                    contentPadding = PaddingValues(top = 16.dp, bottom = 32.dp, start = 8.dp, end = 8.dp),
                     horizontalArrangement = Arrangement.spacedBy(18.dp),
-                    verticalArrangement = Arrangement.spacedBy(18.dp),
+                    verticalArrangement = Arrangement.spacedBy(20.dp),
                     modifier = Modifier.fillMaxSize()
                 ) {
                     items(servers) { srv ->
