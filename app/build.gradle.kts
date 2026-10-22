@@ -121,6 +121,10 @@ dependencies {
 
     // SMB protocol (SMB2 / SMB3)
     implementation("com.hierynomus:smbj:0.13.0")
+    implementation("com.rapid7.client:dcerpc:0.12.0") {
+        exclude(group = "org.bouncycastle", module = "bcprov-jdk15on")
+        exclude(group = "org.bouncycastle", module = "bcpkix-jdk15on")
+    }
 
     // Coil for TV Image Loading
     implementation("io.coil-kt:coil-compose:2.7.0")

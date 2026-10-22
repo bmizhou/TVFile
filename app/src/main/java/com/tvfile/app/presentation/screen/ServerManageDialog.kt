@@ -217,7 +217,7 @@ fun ServerManageDialog(
                     OutlinedTextField(
                         value = sharePath,
                         onValueChange = { sharePath = it },
-                        label = { Text(if (storageType == StorageType.SMB) "共享文件夹名称 (如 video、share、homes)" else "WebDAV 根路径 (默认 / 或 /dav)", fontSize = 13.sp) },
+                        label = { Text("共享根路径 (默认为 /)", fontSize = 13.sp) },
                         singleLine = true,
                         colors = OutlinedTextFieldDefaults.colors(
                             focusedBorderColor = TVAccentCyan,

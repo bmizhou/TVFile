@@ -8,6 +8,8 @@ import com.hierynomus.smbj.auth.AuthenticationContext
 import com.hierynomus.smbj.connection.Connection
 import com.hierynomus.smbj.session.Session
 import com.hierynomus.smbj.share.DiskShare
+import com.rapid7.client.dcerpc.mssrvs.ServerService
+import com.rapid7.client.dcerpc.transport.SMBTransportFactories
 import com.tvfile.app.data.model.StorageType
 import com.tvfile.app.data.model.TVFile
 import com.tvfile.app.util.MimeUtils
@@ -53,11 +55,12 @@ class SmbStorageProvider(
         return getSession().connectShare(shareName) as DiskShare
     }
 
-    // 路径解析工具：例如 "video/movies/avatar.mkv" -> Pair("video", "movies/avatar.mkv")
     private fun parsePath(path: String): Pair<String, String> {
-        val clean = path.trim('/').replace('\\', '/')
-        if (clean.isBlank()) {
-            return Pair(initialShare, "")
+        val clean = path.trim('/', '\\').replace('\\', '/')
+        val cleanInit = initialShare.trim('/', '\\').replace('\\', '/')
+
+        if (clean.isBlank() || clean == "/") {
+            return Pair(cleanInit, "")
         }
         val slashIndex = clean.indexOf('/')
         return if (slashIndex == -1) {
@@ -67,17 +70,52 @@ class SmbStorageProvider(
         }
     }
 
+    // 当路径为 / 且未指定具体共享名时，自动列出该 SMB 服务器上的所有磁盘共享文件夹
+    private fun enumerateShares(): List<TVFile> {
+        return try {
+            val s = getSession()
+            val transport = SMBTransportFactories.SRVSVC.getTransport(s)
+            val service = ServerService(transport)
+            service.shares1
+                .filter { it.type == 0 && !it.netName.endsWith("$") }
+                .map { info ->
+                    TVFile(
+                        id = "smb://$host/${info.netName}",
+                        name = info.netName,
+                        path = info.netName,
+                        size = 0L,
+                        lastModified = System.currentTimeMillis(),
+                        isDirectory = true,
+                        mimeType = "*/*",
+                        category = com.tvfile.app.data.model.FileCategory.ALL,
+                        storageType = StorageType.SMB,
+                        serverId = serverId,
+                        itemCount = 0
+                    )
+                }
+                .sortedWith(compareBy({ !it.isDirectory }, { it.name.lowercase() }))
+        } catch (_: Exception) {
+            emptyList()
+        }
+    }
+
     override suspend fun listFiles(path: String): Result<List<TVFile>> = withContext(Dispatchers.IO) {
         runCatching {
             val (shareName, subPath) = parsePath(path)
             if (shareName.isBlank()) {
+                // 用户未指定具体共享名（如路径为 /），列出主机上所有共享文件夹供进入！
+                val shares = enumerateShares()
+                if (shares.isNotEmpty()) {
+                    return@runCatching shares
+                }
                 return@runCatching emptyList()
             }
+
             val share = getDiskShare(shareName)
             val list = share.list(subPath)
 
             list.filter { it.fileName != "." && it.fileName != ".." }.map { item ->
-                val isDir = item.fileAttributes and 0x10L != 0L // FILE_ATTRIBUTE_DIRECTORY
+                val isDir = item.fileAttributes and 0x10L != 0L
                 val fullItemPath = if (subPath.isBlank()) "$shareName/${item.fileName}" else "$shareName/$subPath/${item.fileName}"
                 TVFile(
                     id = "smb://$host/$fullItemPath",
@@ -170,9 +208,10 @@ class SmbStorageProvider(
     override suspend fun exists(path: String): Boolean = withContext(Dispatchers.IO) {
         try {
             val (shareName, subPath) = parsePath(path)
+            if (shareName.isBlank()) return@withContext true
             val share = getDiskShare(shareName)
             share.fileExists(subPath) || share.folderExists(subPath)
-        } catch (e: Exception) {
+        } catch (_: Exception) {
             false
         }
     }
