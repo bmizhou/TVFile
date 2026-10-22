@@ -52,7 +52,15 @@ class WebDavStorageProvider(
     fun getFullUrl(path: String): String {
         if (path.startsWith("http://") || path.startsWith("https://")) return path
         val clean = path.trim('/', '\\')
-        return if (clean.isBlank()) "$baseUrl/" else "$baseUrl/$clean"
+        if (clean.isBlank()) return "$baseUrl/"
+        
+        val cleanRoot = rootPath.trim('/', '\\')
+        if (cleanRoot.isNotBlank() && clean.startsWith(cleanRoot)) {
+            val protocol = if (port == 443) "https" else "http"
+            val portStr = if ((protocol == "http" && port == 80) || (protocol == "https" && port == 443)) "" else ":$port"
+            return "$protocol://$host$portStr/$clean"
+        }
+        return "$baseUrl/$clean"
     }
 
     suspend fun openRangeStream(file: TVFile, rangeHeader: String): Result<InputStream> = withContext(Dispatchers.IO) {

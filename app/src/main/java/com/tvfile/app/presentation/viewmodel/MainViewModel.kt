@@ -475,7 +475,6 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
 
     fun closeServerManageDialog() {
         _isServerManageDialogOpen.value = false
-        _selectedServer.value = null
     }
 
     fun setSelectedServer(server: ServerEntity?) {

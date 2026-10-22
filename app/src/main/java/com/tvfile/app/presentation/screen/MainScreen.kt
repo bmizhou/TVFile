@@ -213,6 +213,8 @@ fun MainScreen(
                                 onCategorySelected = { cat -> viewModel.setFilterCategory(cat) },
                                 onDeviceClick = { dev -> viewModel.enterDevice(dev) },
                                 onAddServerClick = { viewModel.setAddServerDialogOpen(true) },
+                                onServerManage = { srv -> viewModel.openServerManageDialog(srv) },
+                                onServerFocused = { srv -> viewModel.setSelectedServer(srv) },
                                 onFileClick = { file -> viewModel.openFile(file) },
                                 onFileLongClick = { file -> viewModel.openContextMenu(file) }
                             )
