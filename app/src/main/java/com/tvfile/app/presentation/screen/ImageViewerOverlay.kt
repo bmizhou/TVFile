@@ -6,7 +6,9 @@ import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.focusable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.CircularProgressIndicator
@@ -36,6 +38,10 @@ import java.io.File
 fun ImageViewerOverlay(
     file: TVFile,
     imageUri: String,
+    currentIndex: Int,
+    totalCount: Int,
+    onNext: () -> Unit,
+    onPrev: () -> Unit,
     onClose: () -> Unit
 ) {
     val focusRequester = remember { FocusRequester() }
@@ -48,8 +54,8 @@ fun ImageViewerOverlay(
         } catch (_: Exception) {}
     }
 
-    // 图片标题与大小提示在 3.5 秒后自动淡出隐藏，保证 100% 纯净无遮挡
-    LaunchedEffect(isInfoVisible) {
+    // 每次切换图片时，信息条显示 3.5 秒后自动淡出
+    LaunchedEffect(file.id, isInfoVisible) {
         if (isInfoVisible) {
             delay(3500)
             isInfoVisible = false
@@ -69,10 +75,19 @@ fun ImageViewerOverlay(
             .onPreviewKeyEvent { event ->
                 if (event.nativeKeyEvent.action == KeyEvent.ACTION_DOWN) {
                     when (event.nativeKeyEvent.keyCode) {
+                        KeyEvent.KEYCODE_DPAD_LEFT, KeyEvent.KEYCODE_PAGE_UP, KeyEvent.KEYCODE_MEDIA_PREVIOUS -> {
+                            isInfoVisible = true
+                            onPrev()
+                            true
+                        }
+                        KeyEvent.KEYCODE_DPAD_RIGHT, KeyEvent.KEYCODE_PAGE_DOWN, KeyEvent.KEYCODE_MEDIA_NEXT -> {
+                            isInfoVisible = true
+                            onNext()
+                            true
+                        }
                         KeyEvent.KEYCODE_DPAD_CENTER, KeyEvent.KEYCODE_ENTER,
                         KeyEvent.KEYCODE_DPAD_DOWN, KeyEvent.KEYCODE_DPAD_UP,
                         KeyEvent.KEYCODE_MENU -> {
-                            // 按 OK / 下 / 上 / 菜单键可随时唤醒或隐藏信息条
                             isInfoVisible = !isInfoVisible
                             true
                         }
@@ -94,28 +109,69 @@ fun ImageViewerOverlay(
             File(file.path)
         }
 
-        // 全屏沉浸展示大图
-        SubcomposeAsyncImage(
-            model = ImageRequest.Builder(LocalContext.current)
-                .data(modelData)
-                .crossfade(true)
-                .build(),
-            loading = {
-                Box(contentAlignment = Alignment.Center, modifier = Modifier.fillMaxSize()) {
-                    CircularProgressIndicator(color = TVAccentCyan)
-                }
-            },
-            error = {
-                Box(contentAlignment = Alignment.Center, modifier = Modifier.fillMaxSize()) {
-                    Text("无法加载图片: ${file.name}", color = Color.White, fontSize = 16.sp)
-                }
-            },
-            contentDescription = null,
-            contentScale = ContentScale.Fit,
-            modifier = Modifier.fillMaxSize()
-        )
+        // 全屏大图展示
+        key(file.id) {
+            SubcomposeAsyncImage(
+                model = ImageRequest.Builder(LocalContext.current)
+                    .data(modelData)
+                    .crossfade(true)
+                    .build(),
+                loading = {
+                    Box(contentAlignment = Alignment.Center, modifier = Modifier.fillMaxSize()) {
+                        CircularProgressIndicator(color = TVAccentCyan)
+                    }
+                },
+                error = {
+                    Box(contentAlignment = Alignment.Center, modifier = Modifier.fillMaxSize()) {
+                        Text("无法加载图片: " + file.name, color = Color.White, fontSize = 16.sp)
+                    }
+                },
+                contentDescription = null,
+                contentScale = ContentScale.Fit,
+                modifier = Modifier.fillMaxSize()
+            )
+        }
 
-        // 仅在刚进入或按键时临时呈现的底部半透明胶囊信息条 (彻底移除右上角关闭按钮，不遮挡画面)
+        // 触摸屏支持：点击左 30% 上一张，点击右 30% 下一张，点击中间 40% 显隐信息
+        Row(modifier = Modifier.fillMaxSize()) {
+            Box(
+                modifier = Modifier
+                    .weight(0.3f)
+                    .fillMaxHeight()
+                    .clickable(
+                        interactionSource = remember { MutableInteractionSource() },
+                        indication = null
+                    ) {
+                        isInfoVisible = true
+                        onPrev()
+                    }
+            )
+            Box(
+                modifier = Modifier
+                    .weight(0.4f)
+                    .fillMaxHeight()
+                    .clickable(
+                        interactionSource = remember { MutableInteractionSource() },
+                        indication = null
+                    ) {
+                        isInfoVisible = !isInfoVisible
+                    }
+            )
+            Box(
+                modifier = Modifier
+                    .weight(0.3f)
+                    .fillMaxHeight()
+                    .clickable(
+                        interactionSource = remember { MutableInteractionSource() },
+                        indication = null
+                    ) {
+                        isInfoVisible = true
+                        onNext()
+                    }
+            )
+        }
+
+        // 浮动底部信息胶囊 (带当前页码与遥控器翻页提示)
         AnimatedVisibility(
             visible = isInfoVisible,
             enter = fadeIn(),
@@ -130,7 +186,7 @@ fun ImageViewerOverlay(
                 shadowElevation = 8.dp
             ) {
                 Row(
-                    modifier = Modifier.padding(horizontal = 22.dp, vertical = 10.dp),
+                    modifier = Modifier.padding(horizontal = 24.dp, vertical = 12.dp),
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(16.dp)
                 ) {
@@ -143,14 +199,19 @@ fun ImageViewerOverlay(
                         overflow = TextOverflow.Ellipsis
                     )
                     Text(
-                        text = "大小: ${file.formattedSize}",
+                        text = "" + (currentIndex + 1) + " / " + totalCount,
                         color = TVAccentCyan,
-                        fontSize = 13.sp,
-                        fontWeight = FontWeight.Medium
+                        fontSize = 14.sp,
+                        fontWeight = FontWeight.Bold
                     )
                     Text(
-                        text = "按 BACK 退出 · 按 OK 显隐信息",
-                        color = Color(0xFF94A3B8),
+                        text = "大小: " + file.formattedSize,
+                        color = Color(0xFF8B9BB4),
+                        fontSize = 13.sp
+                    )
+                    Text(
+                        text = "遥控器 ◀ ▶ 翻页 · 按 BACK 退出",
+                        color = Color(0xFF64748B),
                         fontSize = 12.sp
                     )
                 }

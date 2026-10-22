@@ -63,7 +63,7 @@ fun MainScreen(
     // 播放与弹窗状态
     val activeVideoUrl by viewModel.activeVideoUrl.collectAsState()
     val activeAudioUrl by viewModel.activeAudioUrl.collectAsState()
-    val activeImageUrl by viewModel.activeImageUrl.collectAsState()
+    val activeImageViewer by viewModel.activeImageViewer.collectAsState()
     val apkDownloadProgress by viewModel.apkDownloadProgress.collectAsState()
     val downloadingApkFile by viewModel.downloadingApkFile.collectAsState()
     val isMenuOpen by viewModel.isMenuOpen.collectAsState()
@@ -293,11 +293,17 @@ fun MainScreen(
             )
         }
 
-        // 图片查看全屏覆盖层 (支持本地与 WebDAV/SMB 远程大图)
-        if (activeImageUrl != null) {
+        // 图片查看全屏覆盖层 (支持多图片相册、遥控器左右键无缝切图、触屏左右点击)
+        if (activeImageViewer != null) {
+            val imgState = activeImageViewer!!
+            val curFile = imgState.images[imgState.currentIndex]
             ImageViewerOverlay(
-                file = activeImageUrl!!.first,
-                imageUri = activeImageUrl!!.second,
+                file = curFile,
+                imageUri = imgState.currentUri,
+                currentIndex = imgState.currentIndex,
+                totalCount = imgState.images.size,
+                onNext = { viewModel.showNextImage() },
+                onPrev = { viewModel.showPrevImage() },
                 onClose = { viewModel.closePlayers() }
             )
         }
@@ -305,12 +311,14 @@ fun MainScreen(
         
         // 服务器管理弹窗 (修改名称、配置、删除服务器)
         if (isServerManageDialogOpen && selectedServerEntity != null) {
-            ServerManageDialog(
-                server = selectedServerEntity!!,
-                onDismiss = { viewModel.closeServerManageDialog() },
-                onSave = { srv -> viewModel.updateServerConfig(srv) },
-                onDelete = { srv -> viewModel.deleteServerConfig(srv) }
-            )
+            key(selectedServerEntity!!.id) {
+                ServerManageDialog(
+                    server = selectedServerEntity!!,
+                    onDismiss = { viewModel.closeServerManageDialog() },
+                    onSave = { srv -> viewModel.updateServerConfig(srv) },
+                    onDelete = { srv -> viewModel.deleteServerConfig(srv) }
+                )
+            }
         }
 
         // 添加服务器弹窗 (解决问题 4: 默认路径 /, 全遥控器焦点适配)

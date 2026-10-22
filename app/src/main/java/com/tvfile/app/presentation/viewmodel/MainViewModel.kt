@@ -62,8 +62,12 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         val comparator = when (sort) {
             com.tvfile.app.data.model.SortMode.TIME_DESC -> compareByDescending<TVFile> { it.lastModified }
             com.tvfile.app.data.model.SortMode.TIME_ASC -> compareBy<TVFile> { it.lastModified }
-            com.tvfile.app.data.model.SortMode.NAME_ASC -> compareBy<TVFile> { it.name.lowercase() }
-            com.tvfile.app.data.model.SortMode.NAME_DESC -> compareByDescending<TVFile> { it.name.lowercase() }
+            com.tvfile.app.data.model.SortMode.NAME_ASC -> Comparator { a, b ->
+                com.tvfile.app.util.NaturalOrderComparator.compare(a.name, b.name)
+            }
+            com.tvfile.app.data.model.SortMode.NAME_DESC -> Comparator { a, b ->
+                com.tvfile.app.util.NaturalOrderComparator.compare(b.name, a.name)
+            }
             com.tvfile.app.data.model.SortMode.SIZE_DESC -> compareByDescending<TVFile> { it.size }
             com.tvfile.app.data.model.SortMode.SIZE_ASC -> compareBy<TVFile> { it.size }
         }
@@ -113,8 +117,14 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     private val _activeAudioUrl = MutableStateFlow<Pair<TVFile, String>?>(null)
     val activeAudioUrl: StateFlow<Pair<TVFile, String>?> = _activeAudioUrl.asStateFlow()
 
-    private val _activeImageUrl = MutableStateFlow<Pair<TVFile, String>?>(null)
-    val activeImageUrl: StateFlow<Pair<TVFile, String>?> = _activeImageUrl.asStateFlow()
+    data class ActiveImageViewerState(
+        val images: List<TVFile>,
+        val currentIndex: Int,
+        val currentUri: String
+    )
+
+    private val _activeImageViewer = MutableStateFlow<ActiveImageViewerState?>(null)
+    val activeImageViewer: StateFlow<ActiveImageViewerState?> = _activeImageViewer.asStateFlow()
 
     private val _apkDownloadProgress = MutableStateFlow<Int?>(null)
     val apkDownloadProgress: StateFlow<Int?> = _apkDownloadProgress.asStateFlow()
@@ -199,8 +209,8 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             _activeAudioUrl.value = null
             return true
         }
-        if (_activeImageUrl.value != null) {
-            _activeImageUrl.value = null
+        if (_activeImageViewer.value != null) {
+            _activeImageViewer.value = null
             return true
         }
 
@@ -274,12 +284,17 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                     }
                 }
                 FileCategory.IMAGE -> {
-                    if (file.storageType == StorageType.INTERNAL || file.storageType == StorageType.USB) {
-                        _activeImageUrl.value = Pair(file, "file://${file.path}")
+                    val rawList = _rawFileList.value
+                    val imageList = rawList.filter { it.category == FileCategory.IMAGE }
+                    val targetList = if (imageList.isEmpty()) listOf(file) else imageList
+                    val targetIndex = targetList.indexOfFirst { it.id == file.id }.coerceAtLeast(0)
+                    val curFile = targetList[targetIndex]
+                    val uri = if (curFile.storageType == StorageType.INTERNAL || curFile.storageType == StorageType.USB) {
+                        "file://${curFile.path}"
                     } else {
-                        val streamUrl = repository.streamerServer.registerStream(file, provider)
-                        _activeImageUrl.value = Pair(file, streamUrl)
+                        repository.streamerServer.registerStream(curFile, provider)
                     }
+                    _activeImageViewer.value = ActiveImageViewerState(targetList, targetIndex, uri)
                 }
                 FileCategory.APK -> {
                     if (file.storageType == StorageType.INTERNAL || file.storageType == StorageType.USB) {
@@ -305,7 +320,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     fun closePlayers() {
         _activeVideoUrl.value = null
         _activeAudioUrl.value = null
-        _activeImageUrl.value = null
+        _activeImageViewer.value = null
         _apkDownloadProgress.value = null
     }
 
@@ -478,6 +493,41 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         viewModelScope.launch {
             repository.deleteServer(server)
             closeServerManageDialog()
+        }
+    }
+
+
+    fun showNextImage() {
+        val cur = _activeImageViewer.value ?: return
+        if (cur.currentIndex < cur.images.size - 1) {
+            val nextIndex = cur.currentIndex + 1
+            val nextFile = cur.images[nextIndex]
+            viewModelScope.launch {
+                val provider = getCurrentProvider() ?: return@launch
+                val uri = if (nextFile.storageType == StorageType.INTERNAL || nextFile.storageType == StorageType.USB) {
+                    "file://${nextFile.path}"
+                } else {
+                    repository.streamerServer.registerStream(nextFile, provider)
+                }
+                _activeImageViewer.value = ActiveImageViewerState(cur.images, nextIndex, uri)
+            }
+        }
+    }
+
+    fun showPrevImage() {
+        val cur = _activeImageViewer.value ?: return
+        if (cur.currentIndex > 0) {
+            val prevIndex = cur.currentIndex - 1
+            val prevFile = cur.images[prevIndex]
+            viewModelScope.launch {
+                val provider = getCurrentProvider() ?: return@launch
+                val uri = if (prevFile.storageType == StorageType.INTERNAL || prevFile.storageType == StorageType.USB) {
+                    "file://${prevFile.path}"
+                } else {
+                    repository.streamerServer.registerStream(prevFile, provider)
+                }
+                _activeImageViewer.value = ActiveImageViewerState(cur.images, prevIndex, uri)
+            }
         }
     }
 

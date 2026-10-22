@@ -303,6 +303,11 @@ private fun NetworkServerCard(
                     focusedBorderColor = Color.White,
                     contentPadding = PaddingValues(horizontal = 10.dp, vertical = 4.dp)
                 ) { isFocused ->
+                    if (isFocused) {
+                        LaunchedEffect(Unit) {
+                            onFocused()
+                        }
+                    }
                     Text(
                         text = "⚙️ 管理",
                         color = if (isFocused) Color.Black else TVTextSecondary,
