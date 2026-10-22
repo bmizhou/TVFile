@@ -261,26 +261,54 @@ private fun NetworkServerCard(
     TVCard(
         onClick = onClick,
         onLongClick = onLongClick,
+        onFocusChanged = { if (it) onFocused() },
         shape = RoundedCornerShape(16.dp),
-        modifier = Modifier
-            .fillMaxWidth()
-            .onFocusChanged { if (it.isFocused) onFocused() }
+        modifier = Modifier.fillMaxWidth()
     ) {
         Column(
             modifier = Modifier.padding(18.dp),
             verticalArrangement = Arrangement.spacedBy(10.dp)
         ) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Icon(
-                    imageVector = Icons.Default.Dns,
-                    contentDescription = null,
-                    tint = TVAccentCyan,
-                    modifier = Modifier.size(34.dp)
-                )
-                Spacer(modifier = Modifier.width(14.dp))
-                Column {
-                    Text(text = server.name, color = Color.White, fontSize = 16.5.sp, fontWeight = FontWeight.Bold)
-                    Text(text = "协议: ${server.storageType.displayName}", color = TVAccentCyan, fontSize = 13.sp)
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.weight(1f)) {
+                    Icon(
+                        imageVector = Icons.Default.Dns,
+                        contentDescription = null,
+                        tint = TVAccentCyan,
+                        modifier = Modifier.size(34.dp)
+                    )
+                    Spacer(modifier = Modifier.width(14.dp))
+                    Column {
+                        Text(
+                            text = server.name,
+                            color = Color.White,
+                            fontSize = 16.5.sp,
+                            fontWeight = FontWeight.Bold,
+                            maxLines = 1,
+                            overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
+                        )
+                        Text(text = "协议: ${server.storageType.displayName}", color = TVAccentCyan, fontSize = 13.sp)
+                    }
+                }
+
+                // 独立管理按钮：遥控器可直接选按，修改名称或删除服务器
+                TVButton(
+                    onClick = onLongClick,
+                    focusedBackgroundColor = TVAccentCyan,
+                    unfocusedBackgroundColor = Color(0xFF162338),
+                    focusedBorderColor = Color.White,
+                    contentPadding = PaddingValues(horizontal = 10.dp, vertical = 4.dp)
+                ) { isFocused ->
+                    Text(
+                        text = "⚙️ 管理",
+                        color = if (isFocused) Color.Black else TVTextSecondary,
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.Bold
+                    )
                 }
             }
 

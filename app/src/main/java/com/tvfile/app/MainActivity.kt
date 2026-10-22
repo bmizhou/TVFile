@@ -69,11 +69,13 @@ class MainActivity : ComponentActivity() {
             val curTab = viewModel.currentTab.value
             val curLevel = viewModel.level.value
             if (curLevel == 1 && (curTab == com.tvfile.app.data.model.StorageType.SMB || curTab == com.tvfile.app.data.model.StorageType.WEBDAV)) {
-                val server = viewModel.selectedServer.value
+                val server = viewModel.selectedServer.value ?: viewModel.servers.value.firstOrNull()
                 if (server != null) {
                     viewModel.openServerManageDialog(server)
-                    return true
+                } else {
+                    viewModel.setAddServerDialogOpen(true)
                 }
+                return true
             }
             viewModel.openContextMenu(viewModel.selectedFile.value)
             return true
