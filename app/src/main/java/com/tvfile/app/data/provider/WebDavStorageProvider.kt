@@ -36,12 +36,13 @@ class WebDavStorageProvider(
         }
         .build()
 
-    val baseUrl: String
+        val baseUrl: String
         get() {
             val protocol = if (port == 443) "https" else "http"
             val portStr = if ((protocol == "http" && port == 80) || (protocol == "https" && port == 443)) "" else ":$port"
-            val cleanRoot = if (rootPath.isBlank()) "" else "/" + rootPath.trim('/')
-            return "$protocol://$host$portStr$cleanRoot"
+            val cleanRoot = rootPath.trim('/', '\\')
+            val rootSegment = if (cleanRoot.isBlank()) "" else "/$cleanRoot"
+            return "$protocol://$host$portStr$rootSegment"
         }
 
     fun buildUrl(path: String): String {
@@ -50,8 +51,8 @@ class WebDavStorageProvider(
 
     fun getFullUrl(path: String): String {
         if (path.startsWith("http://") || path.startsWith("https://")) return path
-        val clean = path.trim('/')
-        return if (clean.isBlank()) baseUrl + "/" else "$baseUrl/$clean"
+        val clean = path.trim('/', '\\')
+        return if (clean.isBlank()) "$baseUrl/" else "$baseUrl/$clean"
     }
 
     suspend fun openRangeStream(file: TVFile, rangeHeader: String): Result<InputStream> = withContext(Dispatchers.IO) {

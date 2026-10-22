@@ -38,7 +38,10 @@ class StorageRepository(private val context: Context) {
 
     suspend fun addServer(server: ServerEntity): Long = serverDao.insertServer(server)
 
-    suspend fun updateServer(server: ServerEntity) = serverDao.updateServer(server)
+    suspend fun updateServer(server: ServerEntity) {
+        serverDao.updateServer(server)
+        activeNetworkProviders.remove(server.id)
+    }
 
     suspend fun deleteServer(server: ServerEntity) {
         serverDao.deleteServer(server)

@@ -35,7 +35,7 @@ fun AddServerDialog(
     var username by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
     // 默认路径去除 video，默认为 /
-    var sharePath by remember { mutableStateOf("/") }
+    var sharePath by remember { mutableStateOf("video") }
 
     val initialFocusRequester = remember { FocusRequester() }
 
@@ -75,7 +75,11 @@ fun AddServerDialog(
                 // 协议切换 (带遥控器清晰高亮焦点)
                 Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                     TVButton(
-                        onClick = { storageType = StorageType.SMB; port = "445" },
+                        onClick = { 
+                            storageType = StorageType.SMB
+                            port = "445"
+                            if (sharePath == "/" || sharePath.isBlank()) sharePath = "video"
+                        },
                         focusedBackgroundColor = TVAccentBlue,
                         unfocusedBackgroundColor = if (storageType == StorageType.SMB) Color(0xFF1B2F4C) else TVCardBg,
                         focusedBorderColor = TVAccentCyan,
@@ -92,7 +96,11 @@ fun AddServerDialog(
                     }
 
                     TVButton(
-                        onClick = { storageType = StorageType.WEBDAV; port = "5005" },
+                        onClick = { 
+                            storageType = StorageType.WEBDAV
+                            port = "5005"
+                            if (sharePath == "video" || sharePath.isBlank()) sharePath = "/"
+                        },
                         focusedBackgroundColor = TVAccentBlue,
                         unfocusedBackgroundColor = if (storageType == StorageType.WEBDAV) Color(0xFF1B2F4C) else TVCardBg,
                         focusedBorderColor = TVAccentCyan,
@@ -183,7 +191,7 @@ fun AddServerDialog(
                 OutlinedTextField(
                     value = sharePath,
                     onValueChange = { sharePath = it },
-                    label = { Text("共享根路径 (默认为 /)", fontSize = 13.sp) },
+                    label = { Text(if (storageType == StorageType.SMB) "共享文件夹名称 (如 video、share、homes)" else "WebDAV 根路径 (默认 / 或 /dav)", fontSize = 13.sp) },
                     singleLine = true,
                     colors = OutlinedTextFieldDefaults.colors(
                         focusedBorderColor = TVAccentCyan,
@@ -223,7 +231,7 @@ fun AddServerDialog(
                                         port = port.toIntOrNull() ?: if (storageType == StorageType.SMB) 445 else 5005,
                                         username = username.trim(),
                                         password = password.trim(),
-                                        sharePath = sharePath.trim().ifBlank { "/" }
+                                        sharePath = if (storageType == StorageType.SMB) sharePath.trim('/', '\\').ifBlank { "video" } else sharePath.trim().ifBlank { "/" }
                                     )
                                 )
                             }
