@@ -257,7 +257,7 @@ fun ServerManageDialog(
                                             port = port.toIntOrNull() ?: if (storageType == StorageType.SMB) 445 else 5005,
                                             username = username.trim(),
                                             password = password.trim(),
-                                            sharePath = if (storageType == StorageType.SMB) sharePath.trim('/', '\\').ifBlank { "video" } else sharePath.trim().ifBlank { "/" }
+                                            sharePath = sharePath.trim().ifBlank { "/" }
                                         )
                                     )
                                 }

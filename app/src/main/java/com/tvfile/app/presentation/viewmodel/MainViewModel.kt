@@ -284,9 +284,9 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                     }
                 }
                 FileCategory.IMAGE -> {
-                    val rawList = _rawFileList.value
-                    val imageList = rawList.filter { it.category == FileCategory.IMAGE }
-                    val targetList = if (imageList.isEmpty()) listOf(file) else imageList
+                    // 使用与屏幕完全一致的已排序列表 (支持 1, 2, 3, 4 自然顺序切换下一张)
+                    val displayImages = fileList.value.filter { it.category == FileCategory.IMAGE }
+                    val targetList = if (displayImages.isEmpty()) listOf(file) else displayImages
                     val targetIndex = targetList.indexOfFirst { it.id == file.id }.coerceAtLeast(0)
                     val curFile = targetList[targetIndex]
                     val uri = if (curFile.storageType == StorageType.INTERNAL || curFile.storageType == StorageType.USB) {

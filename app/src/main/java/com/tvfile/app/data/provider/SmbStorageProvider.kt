@@ -76,25 +76,39 @@ class SmbStorageProvider(
             val s = getSession()
             val transport = SMBTransportFactories.SRVSVC.getTransport(s)
             val service = ServerService(transport)
-            service.shares1
-                .filter { it.type == 0 && !it.netName.endsWith("$") }
-                .map { info ->
-                    TVFile(
-                        id = "smb://$host/${info.netName}",
-                        name = info.netName,
-                        path = info.netName,
-                        size = 0L,
-                        lastModified = System.currentTimeMillis(),
-                        isDirectory = true,
-                        mimeType = "*/*",
-                        category = com.tvfile.app.data.model.FileCategory.ALL,
-                        storageType = StorageType.SMB,
-                        serverId = serverId,
-                        itemCount = 0
-                    )
+            
+            // 兼容各种 NAS、Windows、Samba 权限：优先使用 shares1，若无权限则回退到无需权限的 shares0
+            val shareNames = try {
+                service.shares1
+                    .filter { it.type == 0 && !it.netName.endsWith("$") }
+                    .map { it.netName }
+            } catch (_: Exception) {
+                try {
+                    service.shares0
+                        .filter { !it.netName.endsWith("$") }
+                        .map { it.netName }
+                } catch (_: Exception) {
+                    emptyList()
                 }
-                .sortedWith(compareBy({ !it.isDirectory }, { it.name.lowercase() }))
-        } catch (_: Exception) {
+            }
+
+            shareNames.map { name ->
+                TVFile(
+                    id = "smb://$host/$name",
+                    name = name,
+                    path = name,
+                    size = 0L,
+                    lastModified = System.currentTimeMillis(),
+                    isDirectory = true,
+                    mimeType = "*/*",
+                    category = com.tvfile.app.data.model.FileCategory.ALL,
+                    storageType = StorageType.SMB,
+                    serverId = serverId,
+                    itemCount = 0
+                )
+            }.sortedWith(compareBy({ !it.isDirectory }, { it.name.lowercase() }))
+        } catch (e: Exception) {
+            android.util.Log.e("TVFile_SMB", "Enumerate shares error: ${e.message}")
             emptyList()
         }
     }

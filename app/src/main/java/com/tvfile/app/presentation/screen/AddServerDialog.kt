@@ -34,7 +34,7 @@ fun AddServerDialog(
     var port by remember { mutableStateOf("445") }
     var username by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
-    // 默认路径去除 video，默认为 /
+    // 默认根路径为 /
     var sharePath by remember { mutableStateOf("/") }
 
     val initialFocusRequester = remember { FocusRequester() }
@@ -231,7 +231,7 @@ fun AddServerDialog(
                                         port = port.toIntOrNull() ?: if (storageType == StorageType.SMB) 445 else 5005,
                                         username = username.trim(),
                                         password = password.trim(),
-                                        sharePath = if (storageType == StorageType.SMB) sharePath.trim('/', '\\').ifBlank { "video" } else sharePath.trim().ifBlank { "/" }
+                                        sharePath = sharePath.trim().ifBlank { "/" }
                                     )
                                 )
                             }
