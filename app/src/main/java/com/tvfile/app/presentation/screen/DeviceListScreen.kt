@@ -16,6 +16,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -34,6 +35,8 @@ fun DeviceListScreen(
     servers: List<ServerEntity>,
     onDeviceClick: (StorageDevice) -> Unit,
     onAddServerClick: () -> Unit,
+    onServerManage: (ServerEntity) -> Unit = {},
+    onServerFocused: (ServerEntity) -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     val isNetwork = currentTab == StorageType.SMB || currentTab == StorageType.WEBDAV
@@ -59,12 +62,23 @@ fun DeviceListScreen(
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Text(
-                text = if (currentTab == StorageType.USB) "外接存储设备 (共 ${usbDevices.size} 台)" else "网络存储服务器 (共 ${servers.size} 台)",
-                color = Color.White,
-                fontSize = 18.sp,
-                fontWeight = FontWeight.Bold
-            )
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(14.dp)) {
+                Text(
+                    text = if (currentTab == StorageType.USB) "外接存储设备 (共 ${usbDevices.size} 台)" else "网络存储服务器 (共 ${servers.size} 台)",
+                    color = Color.White,
+                    fontSize = 19.sp,
+                    fontWeight = FontWeight.Bold
+                )
+
+                if (isNetwork && servers.isNotEmpty()) {
+                    Text(
+                        text = "提示: 长按 OK 或按 MENU 键可编辑/重命名/删除服务器",
+                        color = TVAccentCyan,
+                        fontSize = 13.sp,
+                        fontWeight = FontWeight.Medium
+                    )
+                }
+            }
 
             if (isNetwork) {
                 TVButton(
@@ -72,11 +86,11 @@ fun DeviceListScreen(
                     focusedBackgroundColor = TVAccentCyan,
                     unfocusedBackgroundColor = TVAccentBlue,
                     focusedBorderColor = Color.White,
-                    contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp)
+                    contentPadding = PaddingValues(horizontal = 18.dp, vertical = 8.dp)
                 ) { isFocused ->
-                    Icon(imageVector = Icons.Default.Add, contentDescription = null, tint = if (isFocused) Color.Black else Color.White, modifier = Modifier.size(16.dp))
+                    Icon(imageVector = Icons.Default.Add, contentDescription = null, tint = if (isFocused) Color.Black else Color.White, modifier = Modifier.size(18.dp))
                     Spacer(modifier = Modifier.width(6.dp))
-                    Text(text = "添加服务器", color = if (isFocused) Color.Black else Color.White, fontSize = 13.sp, fontWeight = FontWeight.Bold)
+                    Text(text = "添加服务器", color = if (isFocused) Color.Black else Color.White, fontSize = 14.sp, fontWeight = FontWeight.Bold)
                 }
             }
         }
@@ -92,17 +106,17 @@ fun DeviceListScreen(
                         horizontalAlignment = Alignment.CenterHorizontally,
                         verticalArrangement = Arrangement.spacedBy(10.dp)
                     ) {
-                        Text(text = "🔌", fontSize = 48.sp)
+                        Text(text = "🔌", fontSize = 52.sp)
                         Text(
                             text = "未检测到已插入的 U 盘设备",
                             color = TVTextPrimary,
-                            fontSize = 16.sp,
+                            fontSize = 17.sp,
                             fontWeight = FontWeight.Bold
                         )
                         Text(
                             text = "请将 U 盘或移动硬盘插入电视 USB 接口，系统将自动识别",
                             color = TVTextMuted,
-                            fontSize = 13.sp
+                            fontSize = 14.sp
                         )
                     }
                 }
@@ -122,7 +136,6 @@ fun DeviceListScreen(
         } else {
             // 网络存储
             if (servers.isEmpty()) {
-                // 空状态时：屏幕中央放置醒目的【添加网络存储服务器】焦点引导大卡片！彻底解决焦点无法移上的问题！
                 Box(
                     modifier = Modifier.fillMaxSize(),
                     contentAlignment = Alignment.Center
@@ -131,40 +144,40 @@ fun DeviceListScreen(
                         onClick = onAddServerClick,
                         shape = RoundedCornerShape(20.dp),
                         modifier = Modifier
-                            .width(420.dp)
+                            .width(440.dp)
                             .focusRequester(emptyFocusRequester)
                     ) {
                         Column(
                             modifier = Modifier
-                                .padding(28.dp)
+                                .padding(30.dp)
                                 .fillMaxWidth(),
                             horizontalAlignment = Alignment.CenterHorizontally,
-                            verticalArrangement = Arrangement.spacedBy(12.dp)
+                            verticalArrangement = Arrangement.spacedBy(14.dp)
                         ) {
                             Surface(
                                 shape = RoundedCornerShape(16.dp),
                                 color = TVSurface,
-                                modifier = Modifier.size(64.dp)
+                                modifier = Modifier.size(68.dp)
                             ) {
                                 Box(contentAlignment = Alignment.Center) {
                                     Icon(
                                         imageVector = Icons.Default.Add,
                                         contentDescription = null,
                                         tint = TVAccentCyan,
-                                        modifier = Modifier.size(36.dp)
+                                        modifier = Modifier.size(38.dp)
                                     )
                                 }
                             }
                             Text(
                                 text = "暂无网络存储服务器",
                                 color = Color.White,
-                                fontSize = 17.sp,
+                                fontSize = 18.sp,
                                 fontWeight = FontWeight.Bold
                             )
                             Text(
-                                text = "点击按 OK 键添加 SMB (群晖/电脑共享) 或 WebDAV 服务器",
+                                text = "按遥控器 OK 键添加 SMB (群晖/电脑共享) 或 WebDAV 服务器",
                                 color = TVTextSecondary,
-                                fontSize = 13.sp,
+                                fontSize = 14.sp,
                                 textAlign = androidx.compose.ui.text.style.TextAlign.Center
                             )
                         }
@@ -172,13 +185,13 @@ fun DeviceListScreen(
                 }
             } else {
                 LazyVerticalGrid(
-                    columns = GridCells.Adaptive(minSize = 240.dp),
+                    columns = GridCells.Adaptive(minSize = 250.dp),
                     contentPadding = PaddingValues(top = 16.dp, bottom = 32.dp, start = 8.dp, end = 8.dp),
                     horizontalArrangement = Arrangement.spacedBy(18.dp),
                     verticalArrangement = Arrangement.spacedBy(20.dp),
                     modifier = Modifier.fillMaxSize()
                 ) {
-                    items(servers) { srv ->
+                    items(servers, key = { it.id }) { srv ->
                         val dev = StorageDevice(
                             id = "srv_${srv.id}",
                             name = srv.name,
@@ -191,7 +204,12 @@ fun DeviceListScreen(
                             sharePath = srv.sharePath,
                             serverId = srv.id
                         )
-                        NetworkServerCard(server = srv, onClick = { onDeviceClick(dev) })
+                        NetworkServerCard(
+                            server = srv,
+                            onClick = { onDeviceClick(dev) },
+                            onLongClick = { onServerManage(srv) },
+                            onFocused = { onServerFocused(srv) }
+                        )
                     }
                 }
             }
@@ -218,17 +236,17 @@ private fun UsbDeviceCard(
                     imageVector = Icons.Default.Usb,
                     contentDescription = null,
                     tint = TVAccentGreen,
-                    modifier = Modifier.size(32.dp)
+                    modifier = Modifier.size(34.dp)
                 )
-                Spacer(modifier = Modifier.width(12.dp))
+                Spacer(modifier = Modifier.width(14.dp))
                 Column {
-                    Text(text = device.name, color = Color.White, fontSize = 15.sp, fontWeight = FontWeight.Bold)
-                    Text(text = device.fsType + " 文件系统", color = TVAccentGreen, fontSize = 12.sp)
+                    Text(text = device.name, color = Color.White, fontSize = 16.sp, fontWeight = FontWeight.Bold)
+                    Text(text = device.fsType + " 文件系统", color = TVAccentGreen, fontSize = 13.sp)
                 }
             }
 
-            Text(text = device.formattedCapacity, color = TVTextSecondary, fontSize = 12.sp)
-            Text(text = "路径: ${device.path}", color = TVTextMuted, fontSize = 11.sp, maxLines = 1)
+            Text(text = device.formattedCapacity, color = TVTextSecondary, fontSize = 13.sp)
+            Text(text = "路径: ${device.path}", color = TVTextMuted, fontSize = 11.5.sp, maxLines = 1)
         }
     }
 }
@@ -236,12 +254,17 @@ private fun UsbDeviceCard(
 @Composable
 private fun NetworkServerCard(
     server: ServerEntity,
-    onClick: () -> Unit
+    onClick: () -> Unit,
+    onLongClick: () -> Unit,
+    onFocused: () -> Unit
 ) {
     TVCard(
         onClick = onClick,
+        onLongClick = onLongClick,
         shape = RoundedCornerShape(16.dp),
-        modifier = Modifier.fillMaxWidth()
+        modifier = Modifier
+            .fillMaxWidth()
+            .onFocusChanged { if (it.isFocused) onFocused() }
     ) {
         Column(
             modifier = Modifier.padding(18.dp),
@@ -252,17 +275,17 @@ private fun NetworkServerCard(
                     imageVector = Icons.Default.Dns,
                     contentDescription = null,
                     tint = TVAccentCyan,
-                    modifier = Modifier.size(32.dp)
+                    modifier = Modifier.size(34.dp)
                 )
-                Spacer(modifier = Modifier.width(12.dp))
+                Spacer(modifier = Modifier.width(14.dp))
                 Column {
-                    Text(text = server.name, color = Color.White, fontSize = 15.sp, fontWeight = FontWeight.Bold)
-                    Text(text = "协议: ${server.storageType.displayName}", color = TVAccentCyan, fontSize = 12.sp)
+                    Text(text = server.name, color = Color.White, fontSize = 16.5.sp, fontWeight = FontWeight.Bold)
+                    Text(text = "协议: ${server.storageType.displayName}", color = TVAccentCyan, fontSize = 13.sp)
                 }
             }
 
-            Text(text = "地址: ${server.host}:${server.port}", color = TVTextSecondary, fontSize = 12.sp)
-            Text(text = "共享路径: ${server.sharePath.ifBlank { "/" }}", color = TVTextMuted, fontSize = 11.sp)
+            Text(text = "地址: ${server.host}:${server.port}", color = TVTextSecondary, fontSize = 13.sp)
+            Text(text = "共享路径: ${server.sharePath.ifBlank { "/" }}", color = TVTextMuted, fontSize = 12.sp)
         }
     }
 }

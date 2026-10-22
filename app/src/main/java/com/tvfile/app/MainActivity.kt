@@ -63,9 +63,18 @@ class MainActivity : ComponentActivity() {
         controller.systemBarsBehavior = WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
     }
 
-    // 遥控器 MENU 键拦截
+    // 遥控器 MENU 键拦截：智能区分当前是处于服务器卡片页还是文件页
     override fun onKeyDown(keyCode: Int, event: KeyEvent?): Boolean {
         if (keyCode == KeyEvent.KEYCODE_MENU) {
+            val curTab = viewModel.currentTab.value
+            val curLevel = viewModel.level.value
+            if (curLevel == 1 && (curTab == com.tvfile.app.data.model.StorageType.SMB || curTab == com.tvfile.app.data.model.StorageType.WEBDAV)) {
+                val server = viewModel.selectedServer.value
+                if (server != null) {
+                    viewModel.openServerManageDialog(server)
+                    return true
+                }
+            }
             viewModel.openContextMenu(viewModel.selectedFile.value)
             return true
         }

@@ -98,6 +98,14 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         if (cat == FileCategory.ALL) files else files.filter { it.category == cat }
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
+
+    // 11. 服务器管理专属状态 (编辑、重命名、删除)
+    private val _selectedServer = MutableStateFlow<ServerEntity?>(null)
+    val selectedServer: StateFlow<ServerEntity?> = _selectedServer.asStateFlow()
+
+    private val _isServerManageDialogOpen = MutableStateFlow(false)
+    val isServerManageDialogOpen: StateFlow<Boolean> = _isServerManageDialogOpen.asStateFlow()
+
 // 8. 播放与查看状态
     private val _activeVideoUrl = MutableStateFlow<Triple<TVFile, String, Long>?>(null)
     val activeVideoUrl: StateFlow<Triple<TVFile, String, Long>?> = _activeVideoUrl.asStateFlow()
@@ -442,6 +450,35 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         apkDownloadJob?.cancel()
         _apkDownloadProgress.value = null
         _downloadingApkFile.value = null
+    }
+
+
+    fun openServerManageDialog(server: ServerEntity) {
+        _selectedServer.value = server
+        _isServerManageDialogOpen.value = true
+    }
+
+    fun closeServerManageDialog() {
+        _isServerManageDialogOpen.value = false
+        _selectedServer.value = null
+    }
+
+    fun setSelectedServer(server: ServerEntity?) {
+        _selectedServer.value = server
+    }
+
+    fun updateServerConfig(server: ServerEntity) {
+        viewModelScope.launch {
+            repository.updateServer(server)
+            closeServerManageDialog()
+        }
+    }
+
+    fun deleteServerConfig(server: ServerEntity) {
+        viewModelScope.launch {
+            repository.deleteServer(server)
+            closeServerManageDialog()
+        }
     }
 
 }

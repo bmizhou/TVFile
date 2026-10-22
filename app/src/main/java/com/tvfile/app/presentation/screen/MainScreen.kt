@@ -68,6 +68,8 @@ fun MainScreen(
     val isMenuOpen by viewModel.isMenuOpen.collectAsState()
     val selectedFile by viewModel.selectedFile.collectAsState()
     val isAddServerDialogOpen by viewModel.isAddServerDialogOpen.collectAsState()
+    val isServerManageDialogOpen by viewModel.isServerManageDialogOpen.collectAsState()
+    val selectedServerEntity by viewModel.selectedServer.collectAsState()
     val clipboard by viewModel.fileOperationManager.clipboard.collectAsState()
     val activeTask by viewModel.fileOperationManager.activeTask.collectAsState()
 
@@ -150,6 +152,8 @@ fun MainScreen(
                             onCategorySelected = { cat -> viewModel.setFilterCategory(cat) },
                             onDeviceClick = { dev -> viewModel.enterDevice(dev) },
                             onAddServerClick = { viewModel.setAddServerDialogOpen(true) },
+                            onServerManage = { srv -> viewModel.openServerManageDialog(srv) },
+                            onServerFocused = { srv -> viewModel.setSelectedServer(srv) },
                             onFileClick = { file -> viewModel.openFile(file) },
                             onFileLongClick = { file -> viewModel.openContextMenu(file) }
                         )
@@ -292,6 +296,17 @@ fun MainScreen(
                 file = activeImageUrl!!.first,
                 imageUri = activeImageUrl!!.second,
                 onClose = { viewModel.closePlayers() }
+            )
+        }
+
+        
+        // 服务器管理弹窗 (修改名称、配置、删除服务器)
+        if (isServerManageDialogOpen && selectedServerEntity != null) {
+            ServerManageDialog(
+                server = selectedServerEntity!!,
+                onDismiss = { viewModel.closeServerManageDialog() },
+                onSave = { srv -> viewModel.updateServerConfig(srv) },
+                onDelete = { srv -> viewModel.deleteServerConfig(srv) }
             )
         }
 
@@ -482,6 +497,8 @@ private fun MainContentSection(
     onCategorySelected: (FileCategory) -> Unit,
     onDeviceClick: (com.tvfile.app.data.model.StorageDevice) -> Unit,
     onAddServerClick: () -> Unit,
+    onServerManage: (com.tvfile.app.data.database.ServerEntity) -> Unit = {},
+    onServerFocused: (com.tvfile.app.data.database.ServerEntity) -> Unit = {},
     onFileClick: (com.tvfile.app.data.model.TVFile) -> Unit,
     onFileLongClick: (com.tvfile.app.data.model.TVFile) -> Unit
 ) {
@@ -516,7 +533,9 @@ private fun MainContentSection(
                     usbDevices = usbDevices,
                     servers = servers,
                     onDeviceClick = onDeviceClick,
-                    onAddServerClick = onAddServerClick
+                    onAddServerClick = onAddServerClick,
+                    onServerManage = onServerManage,
+                    onServerFocused = onServerFocused
                 )
             } else {
                 // 第2层：具体目录文件浏览 (解决问题 1: 固定 5 列排版，大图标大字体)

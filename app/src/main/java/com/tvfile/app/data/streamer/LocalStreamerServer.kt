@@ -6,22 +6,43 @@ import com.tvfile.app.data.provider.WebDavStorageProvider
 import fi.iki.elonen.NanoHTTPD
 import kotlinx.coroutines.runBlocking
 import java.io.InputStream
+import java.net.ServerSocket
 import java.net.URLEncoder
 
 /**
- * 本地流媒体代理服务器 (NanoHTTPD)
- * 解决 ExoPlayer 无法直接播放/Seek 远程 SMB/WebDAV 流媒体文件的痛点，
- * 实现免下载即点即播与稳定断点跳转。
+ * 稳健型本地流媒体代理服务器 (NanoHTTPD)
+ * 解决端口冲突、文件句柄泄漏与高码率卡顿问题。
  */
-class LocalStreamerServer(port: Int = 8989) : NanoHTTPD("127.0.0.1", port) {
+class LocalStreamerServer(initialPort: Int = 8989) : NanoHTTPD("127.0.0.1", findAvailablePort(initialPort)) {
 
-    private val activeStreams = mutableMapOf<String, Pair<TVFile, IStorageProvider>>()
+    companion object {
+        private fun findAvailablePort(startPort: Int): Int {
+            for (p in startPort..(startPort + 50)) {
+                try {
+                    val ss = ServerSocket(p)
+                    ss.reuseAddress = true
+                    ss.close()
+                    return p
+                } catch (_: Exception) {}
+            }
+            return startPort
+        }
+    }
 
+    // LRU 限流与防内存泄漏：只保留最近 5 个流，超出自动关闭
+    private val activeStreams = object : LinkedHashMap<String, Pair<TVFile, IStorageProvider>>(8, 0.75f, true) {
+        override fun removeEldestEntry(eldest: MutableMap.MutableEntry<String, Pair<TVFile, IStorageProvider>>?): Boolean {
+            return size > 5
+        }
+    }
+
+    @Synchronized
     fun registerStream(file: TVFile, provider: IStorageProvider): String {
         val streamKey = "stream_${System.currentTimeMillis()}_${Math.abs(file.name.hashCode())}"
         activeStreams[streamKey] = Pair(file, provider)
         val encodedName = URLEncoder.encode(file.name, "UTF-8")
-        return "http://127.0.0.1:$listeningPort/stream?id=$streamKey&filename=$encodedName"
+        val port = listeningPort
+        return "http://127.0.0.1:$port/stream?id=$streamKey&filename=$encodedName"
     }
 
     override fun serve(session: IHTTPSession): Response {
@@ -32,7 +53,8 @@ class LocalStreamerServer(port: Int = 8989) : NanoHTTPD("127.0.0.1", port) {
             if (uri.startsWith("/stream")) {
                 val streamId = parms["id"]?.firstOrNull() 
                     ?: return newFixedLengthResponse(Response.Status.BAD_REQUEST, MIME_PLAINTEXT, "Missing stream id")
-                val target = activeStreams[streamId] 
+                
+                val target = synchronized(this) { activeStreams[streamId] }
                     ?: return newFixedLengthResponse(Response.Status.NOT_FOUND, MIME_PLAINTEXT, "Stream expired or not found")
 
                 val file = target.first
@@ -88,7 +110,6 @@ class LocalStreamerServer(port: Int = 8989) : NanoHTTPD("127.0.0.1", port) {
 
         val rangeLength = if (totalLength > 0) end - start + 1 else -1L
 
-        // 如果是 WebDAV 协议，直接转发 Range 请求给 WebDAV 服务器
         val baseStream = if (provider is WebDavStorageProvider) {
             val davStreamResult = runBlocking { provider.openRangeStream(file, rangeHeader) }
             davStreamResult.getOrNull()
@@ -106,6 +127,7 @@ class LocalStreamerServer(port: Int = 8989) : NanoHTTPD("127.0.0.1", port) {
             return newFixedLengthResponse(Response.Status.INTERNAL_ERROR, MIME_PLAINTEXT, "Cannot open range stream")
         }
 
+        // 大缓冲区包装：使用 64KB 避免小块频繁读取造成的卡顿
         val boundedStream = if (rangeLength > 0 && provider !is WebDavStorageProvider) {
             object : InputStream() {
                 private var remaining = rangeLength

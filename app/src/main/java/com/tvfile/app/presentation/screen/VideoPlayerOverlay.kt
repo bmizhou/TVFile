@@ -30,6 +30,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
+import com.google.android.exoplayer2.DefaultLoadControl
+import com.google.android.exoplayer2.DefaultRenderersFactory
 import com.google.android.exoplayer2.ExoPlayer
 import com.google.android.exoplayer2.MediaItem
 import com.google.android.exoplayer2.ui.StyledPlayerView
@@ -62,16 +64,39 @@ fun VideoPlayerOverlay(
 
     val focusRequester = remember { FocusRequester() }
 
-    val exoPlayer = remember {
-        ExoPlayer.Builder(context).build().apply {
-            val mediaItem = MediaItem.fromUri(Uri.parse(playUri))
-            setMediaItem(mediaItem)
-            prepare()
-            if (initialPosition > 5000L) {
-                seekTo(initialPosition)
-            }
-            playWhenReady = true
+    // RK3399 4K 专用：显式开启 MediaCodec 硬件加速解码
+    val renderersFactory = remember(context) {
+        DefaultRenderersFactory(context).apply {
+            setExtensionRendererMode(DefaultRenderersFactory.EXTENSION_RENDERER_MODE_ON)
+            setEnableDecoderFallback(true)
         }
+    }
+
+    // 4K 大码率专用缓冲控制：保证充足预读防卡顿
+    val loadControl = remember {
+        DefaultLoadControl.Builder()
+            .setBufferDurationsMs(
+                15000, // 最小缓冲 15s
+                60000, // 最大缓冲 60s
+                2000,  // 起播缓冲 2s
+                4000   // seek 后缓冲 4s
+            )
+            .setPrioritizeTimeOverSizeThresholds(true)
+            .build()
+    }
+
+    val exoPlayer = remember {
+        ExoPlayer.Builder(context, renderersFactory)
+            .setLoadControl(loadControl)
+            .build().apply {
+                val mediaItem = MediaItem.fromUri(Uri.parse(playUri))
+                setMediaItem(mediaItem)
+                prepare()
+                if (initialPosition > 5000L) {
+                    seekTo(initialPosition)
+                }
+                playWhenReady = true
+            }
     }
 
     LaunchedEffect(Unit) {
