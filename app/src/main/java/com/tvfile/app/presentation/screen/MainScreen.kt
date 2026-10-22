@@ -6,6 +6,7 @@ import android.widget.Toast
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
+import androidx.compose.foundation.focusGroup
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -160,7 +161,7 @@ fun MainScreen(
                     }
                 }
             } else {
-                // 横屏经典双栏布局
+                // 横屏经典双栏布局 (使用 focusGroup 实现左右焦点作用域严格隔离)
                 Row(modifier = Modifier.fillMaxSize()) {
                     Sidebar(
                         selectedTab = currentTab,
@@ -168,12 +169,14 @@ fun MainScreen(
                         modifier = Modifier
                             .width(240.dp)
                             .fillMaxHeight()
+                            .focusGroup()
                     )
 
                     Column(
                         modifier = Modifier
                             .weight(1f)
                             .fillMaxHeight()
+                            .focusGroup()
                     ) {
                         if (currentTab == StorageType.WEB_TRANSFER) {
                             WebTransferScreen(

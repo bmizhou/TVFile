@@ -2,6 +2,7 @@ package com.tvfile.app.presentation.screen
 
 import android.content.res.Configuration
 import androidx.compose.foundation.background
+import androidx.compose.foundation.focusGroup
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.grid.GridCells
@@ -48,19 +49,19 @@ fun FileBrowserScreen(
 
     val firstItemFocusRequester = remember { FocusRequester() }
 
-    // 进入新目录后自动锁定首个文件
+    // 彻底解决切目录焦点跳回左侧Tab的核心优化：
+    // 移除 120ms 延迟，数据一旦就绪立即同步聚焦首项，零闪烁零逃逸！
     LaunchedEffect(files) {
         if (files.isNotEmpty()) {
-            delay(120)
-            try {
+            runCatching {
                 firstItemFocusRequester.requestFocus()
-            } catch (_: Exception) {}
+            }
         }
     }
 
     if (files.isEmpty()) {
         Box(
-            modifier = modifier.fillMaxSize(),
+            modifier = modifier.fillMaxSize().focusGroup(),
             contentAlignment = Alignment.Center
         ) {
             Text(
