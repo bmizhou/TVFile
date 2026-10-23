@@ -52,6 +52,7 @@ fun MainScreen(
     val sortMode by viewModel.sortMode.collectAsState()
     val viewMode by viewModel.viewMode.collectAsState()
     val files by viewModel.fileList.collectAsState()
+    val isLoadingFiles by viewModel.isLoadingFiles.collectAsState()
     val usbDevices by viewModel.usbDevices.collectAsState()
     val servers by viewModel.servers.collectAsState()
     val playbackProgressMap by viewModel.playbackProgressMap.collectAsState()
@@ -164,6 +165,7 @@ fun MainScreen(
                             servers = servers,
                             playbackProgressMap = playbackProgressMap,
                             canPaste = clipboard != null && clipboard!!.files.isNotEmpty(),
+                            isLoading = isLoadingFiles,
                             isSidebarFocused = isSidebarFocused,
                             onRootClick = { viewModel.selectTab(currentTab) },
                             onToggleView = { viewModel.toggleViewMode() },
@@ -524,6 +526,7 @@ private fun MainContentSection(
     filterCategory: FileCategory,
     sortMode: SortMode,
     files: List<com.tvfile.app.data.model.TVFile>,
+    isLoading: Boolean = false,
     isSidebarFocused: Boolean = false,
     usbDevices: List<com.tvfile.app.data.model.StorageDevice>,
     servers: List<com.tvfile.app.data.database.ServerEntity>,
@@ -581,6 +584,7 @@ private fun MainContentSection(
                 FileBrowserScreen(
                     files = files,
                     viewMode = viewMode,
+                    isLoading = isLoading,
                     progressMap = playbackProgressMap,
                     isSidebarFocused = isSidebarFocused,
                     onFileClick = onFileClick,
@@ -771,7 +775,7 @@ private fun HeaderToolbar(
                 )
                 Spacer(modifier = Modifier.width(6.dp))
                 Text(
-                    text = sortMode.displayName.substringBefore(" ("),
+                    text = sortMode.shortDisplayName,
                     color = if (isFocused) Color.White else TVTextPrimary,
                     fontSize = 17.5.sp,
                     fontWeight = FontWeight.SemiBold

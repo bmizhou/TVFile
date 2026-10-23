@@ -10,6 +10,7 @@ import com.tvfile.app.data.repository.StorageRepository
 import com.tvfile.app.data.transfer.FileOperationManager
 import com.tvfile.app.util.ApkInstaller
 import kotlinx.coroutines.flow.*
+import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import java.io.File
 
@@ -48,6 +49,9 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
 
     // 7. 文件列表与设备列表
     private val _rawFileList = MutableStateFlow<List<TVFile>>(emptyList())
+    private var loadFilesJob: kotlinx.coroutines.Job? = null
+    private val _isLoadingFiles = MutableStateFlow(false)
+    val isLoadingFiles: StateFlow<Boolean> = _isLoadingFiles.asStateFlow()
     val usbDevices: StateFlow<List<StorageDevice>> = repository.usbDevices
     val servers: StateFlow<List<ServerEntity>> = repository.getAllServers().stateIn(
         viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList()
@@ -60,16 +64,28 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         val nonDirs = filtered.filter { !it.isDirectory }
 
         val comparator = when (sort) {
-            com.tvfile.app.data.model.SortMode.TIME_DESC -> compareByDescending<TVFile> { it.lastModified }
-            com.tvfile.app.data.model.SortMode.TIME_ASC -> compareBy<TVFile> { it.lastModified }
+            com.tvfile.app.data.model.SortMode.TIME_DESC -> Comparator<TVFile> { a, b ->
+                val cmp = b.lastModified.compareTo(a.lastModified)
+                if (cmp != 0) cmp else com.tvfile.app.util.NaturalOrderComparator.compare(a.name, b.name)
+            }
+            com.tvfile.app.data.model.SortMode.TIME_ASC -> Comparator<TVFile> { a, b ->
+                val cmp = a.lastModified.compareTo(b.lastModified)
+                if (cmp != 0) cmp else com.tvfile.app.util.NaturalOrderComparator.compare(a.name, b.name)
+            }
             com.tvfile.app.data.model.SortMode.NAME_ASC -> Comparator { a, b ->
                 com.tvfile.app.util.NaturalOrderComparator.compare(a.name, b.name)
             }
             com.tvfile.app.data.model.SortMode.NAME_DESC -> Comparator { a, b ->
                 com.tvfile.app.util.NaturalOrderComparator.compare(b.name, a.name)
             }
-            com.tvfile.app.data.model.SortMode.SIZE_DESC -> compareByDescending<TVFile> { it.size }
-            com.tvfile.app.data.model.SortMode.SIZE_ASC -> compareBy<TVFile> { it.size }
+            com.tvfile.app.data.model.SortMode.SIZE_DESC -> Comparator<TVFile> { a, b ->
+                val cmp = b.size.compareTo(a.size)
+                if (cmp != 0) cmp else com.tvfile.app.util.NaturalOrderComparator.compare(a.name, b.name)
+            }
+            com.tvfile.app.data.model.SortMode.SIZE_ASC -> Comparator<TVFile> { a, b ->
+                val cmp = a.size.compareTo(b.size)
+                if (cmp != 0) cmp else com.tvfile.app.util.NaturalOrderComparator.compare(a.name, b.name)
+            }
         }
 
         dirs.sortedWith(comparator) + nonDirs.sortedWith(comparator)
@@ -173,6 +189,8 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             refreshReceivedFiles()
         } else {
             // 外接存储与网络存储默认进入第1层 (需求10: 无文件过滤)
+            loadFilesJob?.cancel()
+            _isLoadingFiles.value = false
             _level.value = 1
             _currentDevice.value = null
             _currentPath.value = ""
@@ -220,9 +238,13 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             val dev = _currentDevice.value
             val rootPath = dev?.path ?: ""
 
-            if (curPath.isNotBlank() && curPath != rootPath && curPath != "/" && curPath.contains('/')) {
-                val parent = curPath.trimEnd('/').substringBeforeLast('/', "")
-                val targetParent = if (parent.isBlank()) rootPath else parent
+            if (curPath.isNotBlank() && curPath != rootPath && curPath != "/") {
+                val targetParent = if (curPath.contains('/')) {
+                    val p = curPath.trimEnd('/').substringBeforeLast('/', "")
+                    if (p.isBlank()) rootPath else p
+                } else {
+                    rootPath
+                }
                 viewModelScope.launch {
                     val provider = getCurrentProvider() ?: return@launch
                     loadFiles(targetParent, provider)
@@ -231,9 +253,11 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             } else {
                 // 如果在根目录，且是外接/网络存储，按返回键退回第1层设备列表
                 if (_currentTab.value == StorageType.USB || _currentTab.value == StorageType.SMB || _currentTab.value == StorageType.WEBDAV) {
+                    loadFilesJob?.cancel()
                     _level.value = 1
                     _currentDevice.value = null
                     _rawFileList.value = emptyList()
+                    _isLoadingFiles.value = false
                     return true
                 }
             }
@@ -249,13 +273,20 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     fun loadFiles(path: String, provider: IStorageProvider) {
+        loadFilesJob?.cancel()
         _currentPath.value = path
         // 关键：进入任何目录时，同步读取并应用该目录专属的排序记忆
         val dirKey = getDirectoryKey(_currentDevice.value, path)
         _sortMode.value = repository.getSavedSortModeForDirectory(dirKey)
-        viewModelScope.launch {
+        _isLoadingFiles.value = true
+        _rawFileList.value = emptyList() // 立即清除上一目录的陈旧数据，防止新目录短暂残留旧数据导致显示错乱
+
+        loadFilesJob = viewModelScope.launch {
             val result = provider.listFiles(path)
-            _rawFileList.value = result.getOrDefault(emptyList())
+            if (isActive) {
+                _rawFileList.value = result.getOrDefault(emptyList())
+                _isLoadingFiles.value = false
+            }
         }
     }
 

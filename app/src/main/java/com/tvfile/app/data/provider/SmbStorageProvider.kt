@@ -131,12 +131,15 @@ class SmbStorageProvider(
             list.filter { it.fileName != "." && it.fileName != ".." }.map { item ->
                 val isDir = item.fileAttributes and 0x10L != 0L
                 val fullItemPath = if (subPath.isBlank()) "$shareName/${item.fileName}" else "$shareName/$subPath/${item.fileName}"
+                val rawTime = runCatching { item.lastWriteTime.toEpochMillis() }.getOrDefault(0L)
+                // 修复 smbj 内部 FileTime.toEpochMillis 在时间为0时溢出至2185年(>4000000000000L)或负数的问题
+                val safeLastModified = if (rawTime > 4000000000000L || rawTime < 0L) 0L else rawTime
                 TVFile(
                     id = "smb://$host/$fullItemPath",
                     name = item.fileName,
                     path = fullItemPath,
                     size = if (isDir) 0L else item.endOfFile,
-                    lastModified = item.lastWriteTime.toEpochMillis(),
+                    lastModified = safeLastModified,
                     isDirectory = isDir,
                     mimeType = MimeUtils.getMimeType(item.fileName),
                     category = MimeUtils.getCategory(item.fileName, isDir),

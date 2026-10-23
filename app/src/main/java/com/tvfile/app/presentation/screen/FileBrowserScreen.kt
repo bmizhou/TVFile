@@ -39,6 +39,7 @@ import kotlinx.coroutines.delay
 fun FileBrowserScreen(
     files: List<TVFile>,
     viewMode: ViewMode,
+    isLoading: Boolean = false,
     progressMap: Map<String, Float> = emptyMap(),
     isSidebarFocused: Boolean = false,
     onFileClick: (TVFile) -> Unit,
@@ -49,6 +50,18 @@ fun FileBrowserScreen(
     val isPortrait = configuration.orientation == Configuration.ORIENTATION_PORTRAIT
 
     val firstItemFocusRequester = remember { FocusRequester() }
+    val gridState = androidx.compose.foundation.lazy.grid.rememberLazyGridState()
+    val listState = androidx.compose.foundation.lazy.rememberLazyListState()
+
+    // 目录文件列表变更时，确保重置滚动偏移至第0项顶部
+    LaunchedEffect(files) {
+        if (files.isNotEmpty()) {
+            runCatching {
+                gridState.scrollToItem(0)
+                listState.scrollToItem(0)
+            }
+        }
+    }
 
     // 当且仅当用户处于右侧内容区（非侧边栏获焦）且加载新目录时，才自动聚焦首项；
     // 应用冷启动或用户在左侧侧边栏切换Tab时，焦点严格留在侧边栏，绝不主动夺取焦点！
@@ -58,6 +71,16 @@ fun FileBrowserScreen(
                 firstItemFocusRequester.requestFocus()
             }
         }
+    }
+
+    if (isLoading) {
+        Box(
+            modifier = modifier.fillMaxSize().focusGroup(),
+            contentAlignment = Alignment.Center
+        ) {
+            CircularProgressIndicator(color = TVAccentCyan)
+        }
+        return
     }
 
     if (files.isEmpty()) {
@@ -79,6 +102,7 @@ fun FileBrowserScreen(
         val columnCount = if (isPortrait) 3 else 5
         LazyVerticalGrid(
             columns = GridCells.Fixed(columnCount),
+            state = gridState,
             contentPadding = PaddingValues(16.dp),
             horizontalArrangement = Arrangement.spacedBy(16.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp),
@@ -98,6 +122,7 @@ fun FileBrowserScreen(
         }
     } else {
         LazyColumn(
+            state = listState,
             contentPadding = PaddingValues(16.dp),
             verticalArrangement = Arrangement.spacedBy(10.dp),
             modifier = modifier.fillMaxSize()
