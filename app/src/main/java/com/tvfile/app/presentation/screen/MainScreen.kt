@@ -737,13 +737,13 @@ private fun HeaderToolbar(
                     imageVector = Icons.Default.Sort,
                     contentDescription = null,
                     tint = if (isFocused) Color.White else TVAccentCyan,
-                    modifier = Modifier.size(20.dp)
+                    modifier = Modifier.size(22.dp)
                 )
                 Spacer(modifier = Modifier.width(6.dp))
                 Text(
                     text = sortMode.displayName.substringBefore(" ("),
                     color = if (isFocused) Color.White else TVTextPrimary,
-                    fontSize = 15.5.sp,
+                    fontSize = 17.5.sp,
                     fontWeight = FontWeight.SemiBold
                 )
             }

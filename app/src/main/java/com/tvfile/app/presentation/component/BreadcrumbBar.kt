@@ -1,6 +1,5 @@
 package com.tvfile.app.presentation.component
 
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowForwardIos
@@ -16,7 +15,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.tvfile.app.presentation.theme.TVAccentCyan
 import com.tvfile.app.presentation.theme.TVTextMuted
-import com.tvfile.app.presentation.theme.TVTextPrimary
 import com.tvfile.app.presentation.theme.TVTextSecondary
 import java.net.URLDecoder
 
@@ -24,7 +22,7 @@ import java.net.URLDecoder
 fun BreadcrumbBar(
     rootName: String,
     currentPath: String,
-    onRootClick: () -> Unit,
+    onRootClick: (() -> Unit)? = null,
     modifier: Modifier = Modifier
 ) {
     // 解决中文 URL 编码导致的显示错误与乱码问题
@@ -51,8 +49,7 @@ fun BreadcrumbBar(
             text = rootName,
             color = if (displaySub.isBlank()) Color.White else TVTextSecondary,
             fontSize = 20.sp,
-            fontWeight = FontWeight.Bold,
-            modifier = Modifier.clickable { onRootClick() }
+            fontWeight = FontWeight.Bold
         )
         if (displaySub.isNotBlank()) {
             Icon(
