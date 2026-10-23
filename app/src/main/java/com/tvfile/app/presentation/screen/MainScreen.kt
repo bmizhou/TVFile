@@ -15,6 +15,9 @@ import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -77,6 +80,17 @@ fun MainScreen(
     // 排序选择弹窗控制
     var isSortDialogOpen by remember { mutableStateOf(false) }
 
+    // 核心优化：应用启动后焦点严格定位在左侧tab栏第一个按键(内部存储)上，绝不自动跳到右侧卡片
+    val initialTabFocusRequester = remember { FocusRequester() }
+    var isSidebarFocused by remember { mutableStateOf(true) }
+
+    LaunchedEffect(Unit) {
+        kotlinx.coroutines.delay(120)
+        runCatching {
+            initialTabFocusRequester.requestFocus()
+        }
+    }
+
     // 【解决问题 9】：主页按返回键防误触双击退出
     var lastBackPressTime by remember { mutableLongStateOf(0L) }
     BackHandler {
@@ -108,9 +122,13 @@ fun MainScreen(
                 PortraitTopTabBar(
                     selectedTab = currentTab,
                     onTabSelected = { tab -> viewModel.selectTab(tab) },
+                    firstTabModifier = Modifier.focusRequester(initialTabFocusRequester),
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(horizontal = 16.dp, vertical = 6.dp)
+                        .onFocusChanged { state ->
+                            isSidebarFocused = state.hasFocus
+                        }
                 )
 
                 Column(
@@ -146,6 +164,7 @@ fun MainScreen(
                             servers = servers,
                             playbackProgressMap = playbackProgressMap,
                             canPaste = clipboard != null && clipboard!!.files.isNotEmpty(),
+                            isSidebarFocused = isSidebarFocused,
                             onRootClick = { viewModel.selectTab(currentTab) },
                             onToggleView = { viewModel.toggleViewMode() },
                             onOpenSortDialog = { isSortDialogOpen = true },
@@ -166,9 +185,13 @@ fun MainScreen(
                     Sidebar(
                         selectedTab = currentTab,
                         onTabSelected = { tab -> viewModel.selectTab(tab) },
+                        firstTabModifier = Modifier.focusRequester(initialTabFocusRequester),
                         modifier = Modifier
                             .width(270.dp)
                             .fillMaxHeight()
+                            .onFocusChanged { state ->
+                                isSidebarFocused = state.hasFocus
+                            }
                             .focusGroup()
                     )
 
@@ -206,6 +229,7 @@ fun MainScreen(
                                 servers = servers,
                                 playbackProgressMap = playbackProgressMap,
                                 canPaste = clipboard != null && clipboard!!.files.isNotEmpty(),
+                                isSidebarFocused = isSidebarFocused,
                                 onRootClick = { viewModel.selectTab(currentTab) },
                                 onToggleView = { viewModel.toggleViewMode() },
                                 onOpenSortDialog = { isSortDialogOpen = true },
@@ -413,6 +437,7 @@ private fun SortSelectionDialog(
 private fun PortraitTopTabBar(
     selectedTab: StorageType,
     onTabSelected: (StorageType) -> Unit,
+    firstTabModifier: Modifier = Modifier,
     modifier: Modifier = Modifier
 ) {
     Row(
@@ -424,7 +449,7 @@ private fun PortraitTopTabBar(
             icon = Icons.Default.SdCard,
             isSelected = selectedTab == StorageType.INTERNAL,
             onClick = { onTabSelected(StorageType.INTERNAL) },
-            modifier = Modifier.weight(1f)
+            modifier = firstTabModifier.weight(1f)
         )
         PortraitTabItem(
             title = "外接存储",
@@ -499,6 +524,7 @@ private fun MainContentSection(
     filterCategory: FileCategory,
     sortMode: SortMode,
     files: List<com.tvfile.app.data.model.TVFile>,
+    isSidebarFocused: Boolean = false,
     usbDevices: List<com.tvfile.app.data.model.StorageDevice>,
     servers: List<com.tvfile.app.data.database.ServerEntity>,
     playbackProgressMap: Map<String, Float>,
@@ -556,6 +582,7 @@ private fun MainContentSection(
                     files = files,
                     viewMode = viewMode,
                     progressMap = playbackProgressMap,
+                    isSidebarFocused = isSidebarFocused,
                     onFileClick = onFileClick,
                     onFileLongClick = onFileLongClick
                 )
@@ -610,6 +637,7 @@ private fun TopStatusBar(activeTitle: String) {
 private fun Sidebar(
     selectedTab: StorageType,
     onTabSelected: (StorageType) -> Unit,
+    firstTabModifier: Modifier = Modifier,
     modifier: Modifier = Modifier
 ) {
     Column(
@@ -624,7 +652,8 @@ private fun Sidebar(
                 subtitle = "本地闪存",
                 icon = Icons.Default.SdCard,
                 isSelected = selectedTab == StorageType.INTERNAL,
-                onClick = { onTabSelected(StorageType.INTERNAL) }
+                onClick = { onTabSelected(StorageType.INTERNAL) },
+                modifier = firstTabModifier
             )
             SidebarTabItem(
                 title = "外接存储",
@@ -659,7 +688,8 @@ private fun SidebarTabItem(
     subtitle: String,
     icon: ImageVector,
     isSelected: Boolean,
-    onClick: () -> Unit
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier
 ) {
     TVCard(
         onClick = onClick,
@@ -668,7 +698,7 @@ private fun SidebarTabItem(
         unfocusedBorderColor = if (isSelected) TVAccentCyan.copy(alpha = 0.6f) else Color.Transparent,
         focusedBackgroundColor = Color(0xFF1B2F4C),
         unfocusedBackgroundColor = if (isSelected) Color(0xFF131D2D) else Color.Transparent,
-        modifier = Modifier.fillMaxWidth()
+        modifier = modifier.fillMaxWidth()
     ) {
         Row(
             modifier = Modifier

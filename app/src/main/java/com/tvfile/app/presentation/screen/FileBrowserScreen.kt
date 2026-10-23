@@ -40,6 +40,7 @@ fun FileBrowserScreen(
     files: List<TVFile>,
     viewMode: ViewMode,
     progressMap: Map<String, Float> = emptyMap(),
+    isSidebarFocused: Boolean = false,
     onFileClick: (TVFile) -> Unit,
     onFileLongClick: (TVFile) -> Unit,
     modifier: Modifier = Modifier
@@ -49,10 +50,10 @@ fun FileBrowserScreen(
 
     val firstItemFocusRequester = remember { FocusRequester() }
 
-    // 彻底解决切目录焦点跳回左侧Tab的核心优化：
-    // 移除 120ms 延迟，数据一旦就绪立即同步聚焦首项，零闪烁零逃逸！
-    LaunchedEffect(files) {
-        if (files.isNotEmpty()) {
+    // 当且仅当用户处于右侧内容区（非侧边栏获焦）且加载新目录时，才自动聚焦首项；
+    // 应用冷启动或用户在左侧侧边栏切换Tab时，焦点严格留在侧边栏，绝不主动夺取焦点！
+    LaunchedEffect(files, isSidebarFocused) {
+        if (!isSidebarFocused && files.isNotEmpty()) {
             runCatching {
                 firstItemFocusRequester.requestFocus()
             }
