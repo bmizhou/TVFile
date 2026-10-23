@@ -167,7 +167,7 @@ fun MainScreen(
                         selectedTab = currentTab,
                         onTabSelected = { tab -> viewModel.selectTab(tab) },
                         modifier = Modifier
-                            .width(240.dp)
+                            .width(270.dp)
                             .fillMaxHeight()
                             .focusGroup()
                     )
@@ -357,9 +357,9 @@ private fun SortSelectionDialog(
                 Text(
                     text = "🔀 选择文件排序方式",
                     color = Color.White,
-                    fontSize = 17.sp,
+                    fontSize = 21.sp,
                     fontWeight = FontWeight.Bold,
-                    modifier = Modifier.padding(bottom = 6.dp)
+                    modifier = Modifier.padding(bottom = 8.dp)
                 )
 
                 SortMode.values().forEach { mode ->
@@ -381,7 +381,7 @@ private fun SortSelectionDialog(
                             Text(
                                 text = mode.displayName,
                                 color = if (isSelected || isFocused) Color.White else TVTextSecondary,
-                                fontSize = 14.sp,
+                                fontSize = 18.sp,
                                 fontWeight = if (isSelected || isFocused) FontWeight.Bold else FontWeight.Medium
                             )
                             if (isSelected) {
@@ -588,7 +588,7 @@ private fun TopStatusBar(activeTitle: String) {
             Text(
                 text = "文件管理",
                 color = Color.White,
-                fontSize = 17.sp,
+                fontSize = 21.sp,
                 fontWeight = FontWeight.Bold
             )
         }
@@ -597,8 +597,8 @@ private fun TopStatusBar(activeTitle: String) {
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(18.dp)
         ) {
-            Text(text = "当前: $activeTitle", color = TVTextSecondary, fontSize = 13.5.sp)
-            Text(text = "📶 局域网在线", color = TVTextMuted, fontSize = 13.5.sp)
+            Text(text = "当前: $activeTitle", color = TVTextSecondary, fontSize = 17.sp)
+            Text(text = "📶 局域网在线", color = TVTextMuted, fontSize = 17.sp)
         }
     }
 }
@@ -680,17 +680,17 @@ private fun SidebarTabItem(
                 imageVector = icon,
                 contentDescription = null,
                 tint = if (isSelected) TVAccentCyan else TVTextSecondary,
-                modifier = Modifier.size(30.dp)
+                modifier = Modifier.size(36.dp)
             )
             Spacer(modifier = Modifier.width(14.dp))
             Column {
                 Text(
                     text = title,
                     color = if (isSelected) Color.White else TVTextPrimary,
-                    fontSize = 16.5.sp,
+                    fontSize = 20.sp,
                     fontWeight = if (isSelected) FontWeight.Bold else FontWeight.SemiBold
                 )
-                Text(text = subtitle, color = TVTextMuted, fontSize = 12.sp)
+                Text(text = subtitle, color = TVTextMuted, fontSize = 15.sp)
             }
         }
     }
@@ -731,7 +731,7 @@ private fun HeaderToolbar(
                 onClick = onOpenSortDialog,
                 focusedBackgroundColor = TVAccentBlue,
                 unfocusedBackgroundColor = TVCardBg,
-                contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp)
+                contentPadding = PaddingValues(horizontal = 16.dp, vertical = 10.dp)
             ) { isFocused ->
                 Icon(
                     imageVector = Icons.Default.Sort,
@@ -753,19 +753,19 @@ private fun HeaderToolbar(
                 onClick = onToggleView,
                 focusedBackgroundColor = TVAccentBlue,
                 unfocusedBackgroundColor = TVCardBg,
-                contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp)
+                contentPadding = PaddingValues(horizontal = 16.dp, vertical = 10.dp)
             ) { isFocused ->
                 Icon(
                     imageVector = if (viewMode == ViewMode.GRID) Icons.AutoMirrored.Filled.ViewList else Icons.Default.GridView,
                     contentDescription = null,
                     tint = if (isFocused) Color.White else TVAccentCyan,
-                    modifier = Modifier.size(16.dp)
+                    modifier = Modifier.size(22.dp)
                 )
                 Spacer(modifier = Modifier.width(6.dp))
                 Text(
                     text = if (viewMode == ViewMode.GRID) "列表" else "网格",
                     color = if (isFocused) Color.White else TVTextPrimary,
-                    fontSize = 12.sp,
+                    fontSize = 17.5.sp,
                     fontWeight = FontWeight.SemiBold
                 )
             }
@@ -780,7 +780,7 @@ private fun HeaderToolbar(
                 ) {
                     Icon(imageVector = Icons.Default.ContentPaste, contentDescription = null, tint = Color.Black)
                     Spacer(modifier = Modifier.width(6.dp))
-                    Text(text = "粘贴", color = Color.Black, fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                    Text(text = "粘贴", color = Color.Black, fontSize = 17.5.sp, fontWeight = FontWeight.Bold)
                 }
             }
         }

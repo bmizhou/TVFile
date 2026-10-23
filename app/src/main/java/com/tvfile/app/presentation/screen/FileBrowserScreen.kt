@@ -67,7 +67,7 @@ fun FileBrowserScreen(
             Text(
                 text = "当前目录下无文件",
                 color = TVTextMuted,
-                fontSize = 17.sp
+                fontSize = 20.sp
             )
         }
         return
@@ -143,14 +143,14 @@ private fun FileGridCard(
             Surface(
                 shape = RoundedCornerShape(14.dp),
                 color = TVSurface,
-                modifier = Modifier.size(76.dp)
+                modifier = Modifier.size(88.dp)
             ) {
                 Box(contentAlignment = Alignment.Center) {
                     Icon(
                         imageVector = icon,
                         contentDescription = null,
                         tint = iconColor,
-                        modifier = Modifier.size(46.dp)
+                        modifier = Modifier.size(54.dp)
                     )
                 }
             }
@@ -159,7 +159,7 @@ private fun FileGridCard(
             Text(
                 text = file.name,
                 color = TVTextPrimary,
-                fontSize = 17.5.sp,
+                fontSize = 20.5.sp,
                 fontWeight = FontWeight.Bold,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis
@@ -169,7 +169,7 @@ private fun FileGridCard(
             Text(
                 text = file.formattedSize,
                 color = TVTextSecondary,
-                fontSize = 14.5.sp,
+                fontSize = 16.5.sp,
                 fontWeight = FontWeight.Medium
             )
 
@@ -212,7 +212,7 @@ private fun FileListRow(
                 imageVector = icon,
                 contentDescription = null,
                 tint = iconColor,
-                modifier = Modifier.size(36.dp)
+                modifier = Modifier.size(44.dp)
             )
             Spacer(modifier = Modifier.width(18.dp))
             Column(modifier = Modifier.weight(2f)) {
@@ -220,7 +220,7 @@ private fun FileListRow(
                 Text(
                     text = file.name,
                     color = TVTextPrimary,
-                    fontSize = 18.sp,
+                    fontSize = 21.sp,
                     fontWeight = FontWeight.Bold,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis
@@ -230,7 +230,7 @@ private fun FileListRow(
                     Text(
                         text = "已播放 $percent%",
                         color = TVAccentCyan,
-                        fontSize = 13.sp,
+                        fontSize = 15.sp,
                         fontWeight = FontWeight.SemiBold
                     )
                 }
@@ -239,14 +239,14 @@ private fun FileListRow(
             Text(
                 text = file.formattedSize,
                 color = TVTextSecondary,
-                fontSize = 15.sp,
+                fontSize = 17.5.sp,
                 fontWeight = FontWeight.Medium,
                 modifier = Modifier.weight(1f)
             )
             Text(
                 text = if (file.isDirectory) "进入 ❯" else "打开 ❯",
                 color = TVAccentCyan,
-                fontSize = 15.sp,
+                fontSize = 17.5.sp,
                 fontWeight = FontWeight.Bold
             )
         }

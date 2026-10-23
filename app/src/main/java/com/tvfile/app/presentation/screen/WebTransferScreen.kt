@@ -97,7 +97,7 @@ fun WebTransferScreen(
                             text = if (isServerRunning) "⏹ 关闭 HTTP 服务" else "▶ 开启 HTTP 服务",
                             color = if (isServerRunning) Color.White else Color.Black,
                             fontWeight = FontWeight.Bold,
-                            fontSize = 13.sp
+                            fontSize = 16.sp
                         )
                     }
 
@@ -114,7 +114,7 @@ fun WebTransferScreen(
                             Text(
                                 text = "服务已启动 (端口: 45789)",
                                 color = TVAccentGreen,
-                                fontSize = 13.sp,
+                                fontSize = 16.5.sp,
                                 fontWeight = FontWeight.Bold
                             )
                         }
@@ -134,7 +134,7 @@ fun WebTransferScreen(
                                 Text(
                                     text = serverUrl,
                                     color = TVAccentCyan,
-                                    fontSize = 14.sp,
+                                    fontSize = 17.5.sp,
                                     fontFamily = FontFamily.Monospace,
                                     fontWeight = FontWeight.Bold
                                 )
@@ -144,7 +144,7 @@ fun WebTransferScreen(
                         Text(
                             text = "HTTP 服务未开启，点击开启后局域网电脑/手机即可免线直传文件至电视",
                             color = TVTextMuted,
-                            fontSize = 13.sp
+                            fontSize = 16.sp
                         )
                     }
                 }
@@ -189,13 +189,13 @@ fun WebTransferScreen(
                         Text(
                             text = "已接收文件列表",
                             color = Color.White,
-                            fontSize = 18.sp,
+                            fontSize = 21.sp,
                             fontWeight = FontWeight.Bold
                         )
                         Text(
                             text = "共 " + totalFilesCount + " 项 · 占用 " + totalFormatted,
                             color = TVTextSecondary,
-                            fontSize = 14.sp
+                            fontSize = 16.5.sp
                         )
                     }
 
@@ -428,7 +428,7 @@ private fun ReceivedFileCard(
                 Text(
                     text = file.name,
                     color = Color.White,
-                    fontSize = 15.sp,
+                    fontSize = 18.5.sp,
                     fontWeight = FontWeight.Bold,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis
@@ -437,8 +437,8 @@ private fun ReceivedFileCard(
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(16.dp)
                 ) {
-                    Text(text = "💾 " + file.formattedSize, color = TVTextSecondary, fontSize = 12.5.sp)
-                    Text(text = "🕒 " + formatDate(file.lastModified), color = TVTextSecondary, fontSize = 12.5.sp)
+                    Text(text = "💾 " + file.formattedSize, color = TVTextSecondary, fontSize = 15.sp)
+                    Text(text = "🕒 " + formatDate(file.lastModified), color = TVTextSecondary, fontSize = 15.sp)
                     Text(text = "📁 tvfile/", color = TVAccentCyan, fontSize = 12.5.sp, fontWeight = FontWeight.SemiBold)
                 }
             }

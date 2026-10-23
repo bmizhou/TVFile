@@ -80,9 +80,9 @@ private fun FilterChipItem(
         Text(
             text = category.displayName,
             color = textColor,
-            fontSize = 16.sp,
+            fontSize = 19.sp,
             fontWeight = if (isSelected || isFocused) FontWeight.Bold else FontWeight.Medium,
-            modifier = Modifier.padding(horizontal = 20.dp, vertical = 10.dp)
+            modifier = Modifier.padding(horizontal = 22.dp, vertical = 12.dp)
         )
     }
 }

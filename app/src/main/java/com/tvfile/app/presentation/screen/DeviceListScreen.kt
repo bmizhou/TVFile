@@ -67,7 +67,7 @@ fun DeviceListScreen(
                 Text(
                     text = if (currentTab == StorageType.USB) "外接存储设备 (共 ${usbDevices.size} 台)" else "网络存储服务器 (共 ${servers.size} 台)",
                     color = Color.White,
-                    fontSize = 19.sp,
+                    fontSize = 22.sp,
                     fontWeight = FontWeight.Bold
                 )
 
@@ -75,7 +75,7 @@ fun DeviceListScreen(
                     Text(
                         text = "提示: 长按 OK 或按 MENU 键可编辑/重命名/删除服务器",
                         color = TVAccentCyan,
-                        fontSize = 13.sp,
+                        fontSize = 19.5.sp,
                         fontWeight = FontWeight.Medium
                     )
                 }
@@ -91,7 +91,7 @@ fun DeviceListScreen(
                 ) { isFocused ->
                     Icon(imageVector = Icons.Default.Add, contentDescription = null, tint = if (isFocused) Color.Black else Color.White, modifier = Modifier.size(18.dp))
                     Spacer(modifier = Modifier.width(6.dp))
-                    Text(text = "添加服务器", color = if (isFocused) Color.Black else Color.White, fontSize = 14.sp, fontWeight = FontWeight.Bold)
+                    Text(text = "添加服务器", color = if (isFocused) Color.Black else Color.White, fontSize = 17.sp, fontWeight = FontWeight.Bold)
                 }
             }
         }
@@ -178,7 +178,7 @@ fun DeviceListScreen(
                             Text(
                                 text = "按遥控器 OK 键添加 SMB (群晖/电脑共享) 或 WebDAV 服务器",
                                 color = TVTextSecondary,
-                                fontSize = 14.sp,
+                                fontSize = 17.sp,
                                 textAlign = androidx.compose.ui.text.style.TextAlign.Center
                             )
                         }
@@ -241,12 +241,12 @@ private fun UsbDeviceCard(
                 )
                 Spacer(modifier = Modifier.width(14.dp))
                 Column {
-                    Text(text = device.name, color = Color.White, fontSize = 16.sp, fontWeight = FontWeight.Bold)
-                    Text(text = device.fsType + " 文件系统", color = TVAccentGreen, fontSize = 13.sp)
+                    Text(text = device.name, color = Color.White, fontSize = 19.5.sp, fontWeight = FontWeight.Bold)
+                    Text(text = device.fsType + " 文件系统", color = TVAccentGreen, fontSize = 16.sp)
                 }
             }
 
-            Text(text = device.formattedCapacity, color = TVTextSecondary, fontSize = 13.sp)
+            Text(text = device.formattedCapacity, color = TVTextSecondary, fontSize = 16.sp)
             Text(text = "路径: ${device.path}", color = TVTextMuted, fontSize = 11.5.sp, maxLines = 1)
         }
     }
@@ -298,12 +298,12 @@ private fun NetworkServerCard(
                         Text(
                             text = server.name,
                             color = Color.White,
-                            fontSize = 16.5.sp,
+                            fontSize = 20.sp,
                             fontWeight = FontWeight.Bold,
                             maxLines = 1,
                             overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
                         )
-                        Text(text = "协议: ${server.storageType.displayName}", color = TVAccentCyan, fontSize = 13.sp)
+                        Text(text = "协议: ${server.storageType.displayName}", color = TVAccentCyan, fontSize = 16.sp)
                     }
                 }
 
@@ -323,13 +323,13 @@ private fun NetworkServerCard(
                     Text(
                         text = "⚙️ 管理",
                         color = if (isFocused) Color.Black else TVTextSecondary,
-                        fontSize = 12.sp,
+                        fontSize = 15.sp,
                         fontWeight = FontWeight.Bold
                     )
                 }
             }
 
-            Text(text = "地址: ${server.host}:${server.port}", color = TVTextSecondary, fontSize = 13.sp)
+            Text(text = "地址: ${server.host}:${server.port}", color = TVTextSecondary, fontSize = 16.sp)
             Text(text = "共享路径: ${server.sharePath.ifBlank { "/" }}", color = TVTextMuted, fontSize = 12.sp)
         }
     }

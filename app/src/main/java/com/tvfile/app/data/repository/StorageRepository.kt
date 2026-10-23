@@ -189,4 +189,22 @@ class StorageRepository(private val context: Context) {
         prefs.edit().putString("user_sort_mode", mode.name).apply()
     }
 
+    // 按目录记住排序方式：如果该文件夹有独立保存的排序方式则优先采用，否则回退到全局默认
+    fun getSavedSortModeForDirectory(dirKey: String): com.tvfile.app.data.model.SortMode {
+        val saved = prefs.getString("dir_sort_" + dirKey, null)
+        if (saved != null) {
+            try {
+                return com.tvfile.app.data.model.SortMode.valueOf(saved)
+            } catch (_: Exception) {}
+        }
+        return getSavedSortMode()
+    }
+
+    fun saveSortModeForDirectory(dirKey: String, mode: com.tvfile.app.data.model.SortMode) {
+        prefs.edit()
+            .putString("dir_sort_" + dirKey, mode.name)
+            .putString("user_sort_mode", mode.name)
+            .apply()
+    }
+
 }

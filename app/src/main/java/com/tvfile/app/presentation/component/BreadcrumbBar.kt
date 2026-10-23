@@ -45,12 +45,12 @@ fun BreadcrumbBar(
             imageVector = Icons.Default.Folder,
             contentDescription = null,
             tint = TVAccentCyan,
-            modifier = Modifier.size(24.dp)
+            modifier = Modifier.size(28.dp)
         )
         Text(
             text = rootName,
             color = if (displaySub.isBlank()) Color.White else TVTextSecondary,
-            fontSize = 16.5.sp,
+            fontSize = 20.sp,
             fontWeight = FontWeight.Bold,
             modifier = Modifier.clickable { onRootClick() }
         )
@@ -59,12 +59,12 @@ fun BreadcrumbBar(
                 imageVector = Icons.AutoMirrored.Filled.ArrowForwardIos,
                 contentDescription = null,
                 tint = TVTextMuted,
-                modifier = Modifier.size(15.dp)
+                modifier = Modifier.size(18.dp)
             )
             Text(
                 text = displaySub,
                 color = Color.White,
-                fontSize = 17.5.sp,
+                fontSize = 22.sp,
                 fontWeight = FontWeight.Bold
             )
         }

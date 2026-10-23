@@ -193,7 +193,7 @@ fun ImageViewerOverlay(
                     Text(
                         text = file.name,
                         color = Color.White,
-                        fontSize = 15.sp,
+                        fontSize = 18.sp,
                         fontWeight = FontWeight.Bold,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis
@@ -201,18 +201,18 @@ fun ImageViewerOverlay(
                     Text(
                         text = "" + (currentIndex + 1) + " / " + totalCount,
                         color = TVAccentCyan,
-                        fontSize = 14.sp,
+                        fontSize = 17.sp,
                         fontWeight = FontWeight.Bold
                     )
                     Text(
                         text = "大小: " + file.formattedSize,
                         color = Color(0xFF8B9BB4),
-                        fontSize = 13.sp
+                        fontSize = 15.5.sp
                     )
                     Text(
                         text = "遥控器 ◀ ▶ 翻页 · 按 BACK 退出",
                         color = Color(0xFF64748B),
-                        fontSize = 12.sp
+                        fontSize = 14.5.sp
                     )
                 }
             }

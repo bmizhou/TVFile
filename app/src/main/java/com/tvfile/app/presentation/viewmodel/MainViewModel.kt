@@ -241,8 +241,18 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         return false
     }
 
+    fun getDirectoryKey(device: StorageDevice?, path: String): String {
+        val type = device?.storageType ?: _currentTab.value
+        val sid = device?.serverId ?: ""
+        val cleanPath = path.trim('/', '\\').replace('\\', '/')
+        return type.name + "_" + sid + "_" + cleanPath
+    }
+
     fun loadFiles(path: String, provider: IStorageProvider) {
         _currentPath.value = path
+        // 关键：进入任何目录时，同步读取并应用该目录专属的排序记忆
+        val dirKey = getDirectoryKey(_currentDevice.value, path)
+        _sortMode.value = repository.getSavedSortModeForDirectory(dirKey)
         viewModelScope.launch {
             val result = provider.listFiles(path)
             _rawFileList.value = result.getOrDefault(emptyList())
@@ -458,7 +468,9 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
 
     fun setSortMode(mode: com.tvfile.app.data.model.SortMode) {
         _sortMode.value = mode
-        repository.saveSortMode(mode)
+        // 记住当前目录的排序偏好
+        val dirKey = getDirectoryKey(_currentDevice.value, _currentPath.value)
+        repository.saveSortModeForDirectory(dirKey, mode)
     }
 
     fun cancelApkDownload() {

@@ -42,7 +42,7 @@ fun ContextMenuDrawer(
 
     Surface(
         modifier = modifier
-            .width(340.dp)
+            .width(360.dp)
             .fillMaxHeight(),
         color = TVSurface,
         border = BorderStroke(2.dp, TVAccentCyan.copy(alpha = 0.8f)),
@@ -58,13 +58,13 @@ fun ContextMenuDrawer(
             Text(
                 text = "⚡ 文件操作",
                 color = Color.White,
-                fontSize = 20.sp,
+                fontSize = 22.sp,
                 fontWeight = FontWeight.Bold
             )
             Text(
                 text = targetFile?.name ?: "未选择文件",
                 color = TVTextSecondary,
-                fontSize = 15.sp,
+                fontSize = 16.5.sp,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis
             )
@@ -112,7 +112,7 @@ fun ContextMenuDrawer(
                 modifier = Modifier.fillMaxWidth(),
                 contentPadding = PaddingValues(vertical = 12.dp)
             ) {
-                Text(text = "关闭菜单 (BACK)", color = TVTextSecondary, fontSize = 15.sp, fontWeight = FontWeight.SemiBold)
+                Text(text = "关闭菜单 (BACK)", color = TVTextSecondary, fontSize = 16.5.sp, fontWeight = FontWeight.SemiBold)
             }
         }
     }
@@ -159,7 +159,7 @@ private fun TVMenuItem(
                 text = title,
                 // 关键点：获焦时一律采用最高对比度纯白高亮字，消除任何色差冲突
                 color = if (!enabled) TVTextMuted else Color.White,
-                fontSize = 18.sp,
+                fontSize = 20.sp,
                 fontWeight = FontWeight.Bold
             )
         }
