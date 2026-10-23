@@ -40,3 +40,7 @@ Thumbs.db
 *.log
 # 根目录下生成的临时预览图片
 /*.png
+
+# 内部代理协作规范文件 (仅本地生效，不上传开源仓库)
+AGENTS.md
+agents.md
